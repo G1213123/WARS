@@ -2,8 +2,49 @@ import pandas as pd
 import requests
 from io import StringIO
 import os
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
+import folium
+import geopandas as gpd
+import webbrowser
+import pyproj
 
+# point for temp. loading of database
 global cache
+
+
+class map_gov:
+    def __init__(self, **kwargs):
+        self.__slots__ = ['stops', 'aoi']
+        self.__dict__.update( kwargs )
+
+        centroid = self.aoi.centroid
+        self.m = folium.Map( location=[centroid.x, centroid.y], zoom_start=20, tiles='OpenStreetMap' )
+        self.map_stop()
+        self.map_aoi()
+
+        self.m.save( 'test.html' )
+
+        if True:
+            webbrowser.open( 'test.html' )
+
+    def map_stop(self):
+        for key, b_stop in self.stops.iterrows():
+            description = folium.Popup( html='<b>#' + str( key ) + '</b><br><font size="4">' + str(
+                b_stop['stop_name'] ) + '</font><br><i> lat=%s lon=%s </i>'
+                                             % (b_stop.stop_lat, b_stop.stop_lon), max_width=300 )
+            folium.Marker( location=[b_stop.stop_lat, b_stop.stop_lon], radius=10,
+                           popup=description, color='#3186cc', fill_color='#3186cc' ).add_to( self.m )
+
+    def map_aoi(self):
+
+        polygon_geom = gpd.GeoDataFrame( index=[0], geometry=[self.aoi] )
+        polygon_geom.crs = {'init': 'epsg:4326'}
+        folium.GeoJson( polygon_geom ).add_to( self.m )
+
+
+def pt_in_polygon(x, y, polygon):
+    return polygon.contains( Point( x, y ) )
 
 class data_gov:
     def __init__(self):
@@ -23,25 +64,33 @@ class data_gov:
 
     def d_path(self, f):
         return os.path.join(self.cache_path, f+'.csv')
+
                 
     def read(self, f):
-            cache = pd.read_csv( self.d_path(f), index_col=0)
-            return cache
+        cache = pd.read_csv( self.d_path( f ), index_col=0 )
+        return cache
 
-    def read_filter(self, f, field, value):
-            cache = pd.read_csv( self.d_path(f), index_col=0)
-            cache=cache[cache[field]==value]
-            return cache
+    def read_by_field(self, f, field, value):
+        cache = pd.read_csv( self.d_path( f ), index_col=0 )
+        cache = cache[cache[field].isin( value )]
+        return cache
 
-    def route_query(self, stop):
-        cache=self.read_filter('stops', 'stop_id', stop)
+    def read_by_loc(self, polygon):
+        cache = self.read( 'stops' )
+        cache = cache[cache.apply( lambda x: pt_in_polygon( x['stop_lat'], x['stop_lon'], polygon ), axis=1 )]
+        return cache
+
+    def route_query_id(self, stop):
+        cache = self.read_by_field( 'stops', 'stop_id', stop )
         cache=cache.merge(self.read('stop_times'), on='stop_id', how='left')
         cache=cache.merge(self.read('trips'), on='trip_id', how='left')
         cache = cache.merge( self.read( 'routes' ), on='route_id', how='left' )
         return cache
 
 if __name__ == '__main__':
+    polygon = Polygon( [(22.322304, 114.188933), (22.322709, 114.190472), (22.320541, 114.189943)] )
     g=data_gov()
-    d = g.route_query(453)
-
+    d = g.read_by_loc( polygon )
+    e = g.route_query_id( d['stop_id'] )
+    f = map_gov( stops=d, aoi=polygon )
     q=1

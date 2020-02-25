@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type"/>
+
+    <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.5.1/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/leaflet@1.5.1/dist/leaflet.css" rel="stylesheet"/>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" rel="stylesheet"/>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"
+          rel="stylesheet"/>
+    <link href="https://rawcdn.githack.com/python-visualization/folium/master/folium/templates/leaflet.awesome.rotate.css"
+          rel="stylesheet"/>
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+
+    <meta content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <style>
+                #map_0d6c99d792584b8a8c7a85e05aefd955 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+
+    </style>
+
+</head>
+<body>
+
+<div class="folium-map" id="map_0d6c99d792584b8a8c7a85e05aefd955"></div>
+
+</body>
+<script>    
+    
+            var map_0d6c99d792584b8a8c7a85e05aefd955 = L.map(
+                "map_0d6c99d792584b8a8c7a85e05aefd955",
+                {
+                    center: [22.32185133333333, 114.18978266666666],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 20,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_911a20614c1849c5a4952f7fe9ab3340 = L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "Data by \u0026copy; \u003ca href=\"http://openstreetmap.org\"\u003eOpenStreetMap\u003c/a\u003e, under \u003ca href=\"http://www.openstreetmap.org/copyright\"\u003eODbL\u003c/a\u003e.", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_0d6c99d792584b8a8c7a85e05aefd955);
+        
+    
+            var marker_1dab95c8e8204917992d7a773992c9eb = L.marker(
+                [22.32206, 114.18935],
+                {"color": "#3186cc", "fillColor": "#3186cc", "radius": 10}
+            ).addTo(map_0d6c99d792584b8a8c7a85e05aefd955);
+        
+    
+        var popup_ffa25bc27b1c4bd29247695e68b1cefc = L.popup({"maxWidth": 300});
+
+        
+            var html_ac0b2b8b7d1240298607afc4d21da6d3 = $(`<div id="html_ac0b2b8b7d1240298607afc4d21da6d3" style="width: 100.0%; height: 100.0%;"><b>#1305</b><br><font size="4">[KMB+NWFB] JUBILANT PLACE/JUBILANT PLACE, MA TAU KOK ROAD|[KMB] JUBILANT PLACE</font><br><i> lat=22.32206 lon=114.18935 </i></div>`)[0];
+            popup_ffa25bc27b1c4bd29247695e68b1cefc.setContent(html_ac0b2b8b7d1240298607afc4d21da6d3);
+        
+
+        marker_1dab95c8e8204917992d7a773992c9eb.bindPopup(popup_ffa25bc27b1c4bd29247695e68b1cefc)
+        ;
+
+        
+    
+    
+        function geo_json_a1d2b7eb161f4de2a8310f3f029057b9_onEachFeature(feature, layer) {
+            layer.on({
+                click: function(e) {
+                    map_0d6c99d792584b8a8c7a85e05aefd955.fitBounds(e.target.getBounds());
+                }
+            });
+        };
+        var geo_json_a1d2b7eb161f4de2a8310f3f029057b9 = L.geoJson(null, {
+                onEachFeature: geo_json_a1d2b7eb161f4de2a8310f3f029057b9_onEachFeature,
+            
+        }).addTo(map_0d6c99d792584b8a8c7a85e05aefd955);
+            geo_json_a1d2b7eb161f4de2a8310f3f029057b9.addData({"bbox": [22.320541, 114.188933, 22.322709, 114.190472], "features": [{"bbox": [22.320541, 114.188933, 22.322709, 114.190472], "geometry": {"coordinates": [[[22.322304, 114.188933], [22.322709, 114.190472], [22.320541, 114.189943], [22.322304, 114.188933]]], "type": "Polygon"}, "id": "0", "properties": {}, "type": "Feature"}], "type": "FeatureCollection"});
+        
+
+</script>
