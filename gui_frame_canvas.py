@@ -11,6 +11,30 @@ import combine_routes
 import gui_savesetting
 
 
+class AoiInstance:
+    def __init__(self, point, type, radius=0):
+        self.point = []
+        self.type = type
+        self.radius = radius
+
+        if isinstance( point, tuple ):
+            self.point += [point]
+        elif isinstance( point, list ):
+            self.point += point
+        else:
+            raise TypeError( 'Point must be a tuple of a coordinate' )
+
+    def close_polygon(self):
+        self.type = 'Polygon'
+
+    def add_vertex(self, point):
+        if isinstance( point, tuple ):
+            if self.type == 'Unclose':
+                self.point.append( point )
+        else:
+            raise TypeError( 'Point must be a tuple of a coordinate' )
+
+
 class frame_canvas( tkinter.Frame ):
     # Frame containing map display, location searching function and enter/clear box for specifying location
     #   of interest
@@ -43,13 +67,20 @@ class frame_canvas( tkinter.Frame ):
         }
         return mouseLatLng
 
-    def rev_FX(self, circlelat, circlelng):
+    '''    def rev_FX(self, circlelat, circlelng):
         # reverse coordinate translate from lat, lng to canvas xy
         dx = (circlelng - self.lng) * 40000000 * math.cos( (circlelat + self.lat) * math.pi / 360 ) / 360
         dy = (circlelat - self.lat) * 40000000 / 360
         scale = 156543.03392 * math.cos( self.lat * math.pi / 180 ) / math.pow( 2, self.zoom )
         target = {'x': self.centerX + dx / scale, 'y': self.centerY + dy / scale}
-        return target
+        return target'''
+
+    def rev_FX(self, circlelat, circlelng):
+        dlat = (circlelat - self.maxlat) / (self.minlat - self.maxlat)
+        dlng = (circlelng - self.minlng) / (self.maxlng - self.minlng)
+        x = self.canvas.canvasx( 0 ) + self.width * dlng
+        y = self.canvas.canvasy( 0 ) + self.height * dlat
+        return (x, y)
 
     def getaddress(self, lat, lng):
         # return url address for static map image by either provide lat lng or geocode a location name
@@ -95,48 +126,33 @@ class frame_canvas( tkinter.Frame ):
         aoi_point = self.FX( self.lat, self.lng, self.zoom, self.centerX, self.centerY, x,
                              y )
 
-        if self.websource.get() == 'data.gov.hk':
-            self.aoi_datagov( aoi_point, x, y, scale, widget )
-        else:
-            self.aoi_eTrans( aoi_point, x, y, scale, widget )
+        self.aoi_append( aoi_point, x, y, scale, widget )
 
-    def close_polygon(self):
-        self.canvas.create_line( self.unclosed_marker[-1]['x'], self.unclosed_marker[-1]['y'],
-                                 self.unclosed_marker[0]['x'], self.unclosed_marker[0]['y'] )
-        polygon = {'vertices': Polygon( self.unclosed_aoi ), 'type': 'Polygon'}
-        self.aoi.append( polygon )
-        self.canvas_marker.append( {'vertice': self.unclosed_marker, 'type': 'Polygon'} )
-        self.unclosed_aoi = []
-        self.unclosed_marker = []
-
-    def aoi_datagov(self, point, canvasx, canvasy, scale, widget):
+    def aoi_append(self, point, canvasx, canvasy, scale, widget):
         pt = (point['lat'], point['lng'])
+
         if self.aoimode == 'Polygon':
-            widget.create_oval( canvasx - 2, canvasy - 2, canvasx + 2, canvasy + 2, width=2 )
-            if len( self.unclosed_marker ) > 0:
-                widget.create_line( self.unclosed_marker[-1]['x'], self.unclosed_marker[-1]['y'], canvasx, canvasy )
-            self.unclosed_aoi.append( pt )
-            self.unclosed_marker.append( {'x': canvasx, 'y': canvasy, 'type': 'Point'} )
+            widget.create_oval( canvasx - 2, canvasy - 2, canvasx + 2, canvasy + 2, width=2, fill='red', outline='red' )
+            if self.aoi[-1].type == 'Unclose':
+                widget.create_line( *self.rev_FX( *self.aoi[-1].point[-1] ), canvasx, canvasy )
+                self.aoi[-1].add_vertex( pt )
+            else:
+                self.aoi.append( AoiInstance( pt, 'Unclose' ) )
+
         elif self.aoimode == 'Circle':
-            size = 500 / scale
+            if self.websource.get() == 'eTransport':
+                html, radius = read_html.get_html( point['lat'], point['lng'] )
+            else:
+                radius = 500
+            size = radius / scale
             widget.create_oval( canvasx - size, canvasy - size, canvasx + size, canvasy + size, width=2 )
 
-            point.update( {'type': 'Circle', 'radius': 500} )
-            self.aoi.append( point )
-            self.canvas_marker.append( {'x': canvasx, 'y': canvasy, 'type': 'Circle'} )
+            self.aoi.append( AoiInstance( pt, 'Circle', radius ) )
 
-    def aoi_eTrans(self, point, canvasx, canvasy, scale, widget):
-        html, radius = read_html.get_html( point['lat'], point['lng'] )
-
-        size = radius / scale
-        widget.create_oval( canvasx - size, canvasy - size, canvasx + size, canvasy + size, width=2 )
-
-        point.update( {'type': 'Circle', 'radius': radius} )
-        self.aoi.append( point )
-        self.canvas_marker.append( {'x': canvasx, 'y': canvasy, 'type': 'Circle'} )
-        print( 0 )
-        # label = self.getlabelname()
-        # widget.create_text(x, y+2*size, text=label)
+    def close_polygon(self):
+        self.canvas.create_line( *self.rev_FX( *self.aoi[-1].point[0] ),
+                                 *self.rev_FX( *self.aoi[-1].point[-1] ) )
+        self.aoi[-1].close_polygon()
 
     def move_from(self, event):
         ''' Remember previous coordinates for scrolling with the mouse '''
@@ -177,23 +193,17 @@ class frame_canvas( tkinter.Frame ):
                                   tags="map" )
         scale = 156543.03392 * math.cos( self.lat * math.pi / 180 ) / math.pow( 2, self.zoom )
         for marker in self.aoi:
-            if marker['type'] == 'Circle':
-                size = marker['radius'] / scale
-                dlat = (marker['lat'] - self.maxlat) / (self.minlat - self.maxlat)
-                dlng = (marker['lng'] - self.minlng) / (self.maxlng - self.minlng)
-                x = self.canvas.canvasx( 0 ) + self.width * dlng
-                y = self.canvas.canvasy( 0 ) + self.height * dlat
+            if marker.type == 'Circle':
+                size = marker.radius / scale
+                x, y = self.rev_FX( *marker.point[0] )
                 self.canvas.create_oval( x - size, y - size, x + size, y + size, width=2 )
-            elif marker['type'] == 'Polygon':
-                vetices = list( marker['vertices'].exterior.coords )
-                for dx, val in enumerate( vetices ):
-                    dlat = (val[0] - self.maxlat) / (self.minlat - self.maxlat)
-                    dlng = (val[1] - self.minlng) / (self.maxlng - self.minlng)
-                    x = self.canvas.canvasx( 0 ) + self.width * dlng
-                    y = self.canvas.canvasy( 0 ) + self.height * dlat
-                    self.canvas.create_oval( x - 2, y - 2, x + 2, y + 2, width=2 )
-                    self.canvas.create_line( self.unclosed_marker[id - 1]['x'], self.unclosed_marker[id - 1]['y'],
-                                             self.unclosed_marker[id]['x'], self.unclosed_marker[id]['y'] )
+            elif marker.type == 'Polygon':
+                vetices = marker.point
+                for id, val in enumerate( vetices ):
+                    x, y = self.rev_FX( *marker.point[id] )
+                    self.canvas.create_oval( x - 2, y - 2, x + 2, y + 2, width=2, fill='red', outline='red' )
+                    self.canvas.create_line( *self.rev_FX( vetices[id - 1][0], vetices[id - 1][1] ),
+                                             *self.rev_FX( vetices[id][0], vetices[id][1] ) )
         self.canvas.focus_set()
         self.window.update()
 
@@ -218,17 +228,12 @@ class frame_canvas( tkinter.Frame ):
         print( self.save_cfg )
 
         self.saves['saves'].clear()
-        if self.save_cfg['batch']:
-            marker_id = 1
-            for marker in self.aoi:
-                self.saves['saves'].append( read_html.main( marker['lat'], marker['lng'],
-                                                            os.path.join( self.save_cfg['dirname'],
-                                                                          'Marker%s.csv' % marker_id ),
-                                                            self.save_cfg['map'] ) )
-                marker_id += 1
-        else:
-            for marker in self.aoi:
-                self.saves['saves'].append( read_html.main( marker['lat'], marker['lng'], show=self.save_cfg['map'] ) )
+        marker_id = 1
+        for marker in self.aoi:
+            savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
+                'batch'] else ''
+            self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
+            marker_id += 1
 
         self.saves['dirname'] = os.path.dirname( self.saves['saves'][-1] )
         if self.save_cfg['consld']:
@@ -237,18 +242,18 @@ class frame_canvas( tkinter.Frame ):
 
     def back(self, event=None):
         del self.aoi[-1]
-        del self.canvas_marker[-1]
         self.reload()
 
     def clear(self, event=None):
         self.aoi = []
-        self.canvas_marker = []
         self.reload()
 
     def drawtoolhandler(self, event=None, btn=None):
         self.btnD2.config( state="normal" )
         if self.websource.get() != 'data.gov.hk':
             self.btnD2.config( state="disabled" )
+            self.btnD2.config( relief=tkinter.RAISED )
+            self.btnD.config( relief=tkinter.SUNKEN )
 
         if btn == 'Circle':
             self.btnD2.config( relief=tkinter.RAISED )
@@ -276,10 +281,10 @@ class frame_canvas( tkinter.Frame ):
         self.height = MainWindow.height
         self.centerX = MainWindow.width / 2
         self.centerY = MainWindow.height / 2
-        self.canvas_marker = []
-        self.unclosed_marker = []
-        self.aoi = []
-        self.unclosed_aoi = []
+        # self.canvas_marker = []
+        # self.unclosed_marker = []
+        self.aoi = [AoiInstance( (0, 0), 'Initiate' )]
+        # self.unclosed_aoi = []
         self.aoimode = 'None'
         self.s = requests.Session()
         self.saves = {'saves': [''], 'dirname': None}
