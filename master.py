@@ -252,6 +252,12 @@ class MainWindow( tkinter.Toplevel ):
             td_fetch_gmb.fetch_archive( save )
         self.headway.archive = save
 
+    def handle_tab_changed(self, event):
+        selection = event.widget.select()
+        tab = event.widget.tab( selection, "text" )
+        if tab == 'log':
+            self.log.log_insert()
+
     def __init__(self, parent):
         tkinter.Toplevel.__init__( self, parent )
         self.name = 'Mainwindow'
@@ -288,6 +294,7 @@ class MainWindow( tkinter.Toplevel ):
         self.tab_parent.add( self.headway, text="headway" )
         self.tab_parent.add( self.log, text="log" )
         self.tab_parent.pack( expand=True, fill=tkinter.BOTH )
+        self.tab_parent.bind( "<<NotebookTabChanged>>", self.handle_tab_changed )
 
         bottombar = tkinter.Frame( self, height=5 )
         bottombar.pack( expand=False, fill=tkinter.X )

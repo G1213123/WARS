@@ -2,7 +2,8 @@ import pickle
 import tkinter
 import codecs
 import pickletools
-
+from io import StringIO
+import sys
 
 def var_logging(modules):
     # modules = [self, self.frame_map, self.route, self.headway]
@@ -16,7 +17,10 @@ def var_logging(modules):
                     data.update( {key: value} )
                 except TypeError:
                     pass
-        log[module.name] = data
+        try:
+            log[module.name] = data
+        except AttributeError:
+            log['AoiInstance'] = data
     return log
 
 
@@ -28,8 +32,23 @@ class ShowLog( tkinter.Frame ):
         frm_a = tkinter.Frame( self, width=self.winfo_reqwidth(), height=self.winfo_reqheight() )
         frm_a.pack()
 
-        log_box = tkinter.Text( frm_a, width=self.winfo_reqwidth(), height=self.winfo_reqheight() )
-        log_box.pack()
-        log = pickle.dumps( var_logging( MainWindow._MainWindow__modules ), 0 )  # .decode('utf-8')
-        pickletools.dis( log )  # , out= 'log.txt')
-        log_box.insert( tkinter.INSERT, log )
+        self.log_box = tkinter.Text( frm_a, width=self.winfo_reqwidth(), height=self.winfo_reqheight() )
+        self.log_box.pack()
+
+        self.window = MainWindow
+
+    def log_insert(self):
+        log2 = pickle.dumps( var_logging( self.window._MainWindow__modules ), 0 )
+        log1 = pickle.dumps( var_logging( self.window.frame_map.aoi ), 0 )
+
+        old_stdout = sys.stdout
+        # This variable will store everything that is sent to the standard output
+        result = StringIO()
+        sys.stdout = result
+
+        pickletools.dis( log2 )
+        pickletools.dis( log1 )
+
+        sys.stdout = old_stdout
+        result_string = result.getvalue()
+        self.log_box.insert( tkinter.INSERT, result_string )
