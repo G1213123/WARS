@@ -5,10 +5,11 @@ import os
 import requests
 import math
 from shapely.geometry import Point, Polygon
+from tkinter import messagebox
 
 import read_html
 import combine_routes
-import gui_savesetting
+import gui_popups
 
 
 class AoiInstance:
@@ -166,6 +167,7 @@ class frame_canvas( tkinter.Frame ):
         # show_image()  # redraw the image
 
     def reload(self, event=None, mousex=None, mousey=None, ):
+        # if no x,y is passed, the map will be reloaded in place
         if mousex is None:
             mousex = self.canvas.canvasx( 320 )
         if mousey is None:
@@ -223,22 +225,25 @@ class frame_canvas( tkinter.Frame ):
         self.reload()
 
     def to_read_html(self, event=None):
-        popup = gui_savesetting.savesetting()
-        self.save_cfg = popup.out
-        print( self.save_cfg )
+        d = 1
+        popup = gui_popups.SaveSetting( self.save_cfg['dirname'] )
+        if len( popup.out ) > 0:
+            self.save_cfg = popup.out
+            print( self.save_cfg )
 
-        self.saves['saves'].clear()
-        marker_id = 1
-        for marker in self.aoi:
-            savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
-                'batch'] else ''
-            self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
-            marker_id += 1
+            self.saves['saves'].clear()
+            marker_id = 1
+            for marker in self.aoi:
+                savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
+                    'batch'] else ''
+                self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
+                marker_id += 1
 
-        self.saves['dirname'] = os.path.dirname( self.saves['saves'][-1] )
-        if self.save_cfg['consld']:
-            self.saves['saves'].append( combine_routes.main( self.saves ) )
-        self.window.route.update_list( self.saves )
+            self.saves['dirname'] = os.path.dirname( self.saves['saves'][-1] )
+            if self.save_cfg['consld']:
+                self.saves['saves'].append( combine_routes.main( self.saves ) )
+            self.window.route.update_list( self.saves )
+            self.window.tab_parent.select( self.window.route )
 
     def back(self, event=None):
         del self.aoi[-1]
@@ -248,13 +253,30 @@ class frame_canvas( tkinter.Frame ):
         self.aoi = []
         self.reload()
 
-    def drawtoolhandler(self, event=None, btn=None):
-        self.btnD2.config( state="normal" )
-        if self.websource.get() != 'data.gov.hk':
-            self.btnD2.config( state="disabled" )
-            self.btnD2.config( relief=tkinter.RAISED )
-            self.btnD.config( relief=tkinter.SUNKEN )
+    def webListHandler(self, event=None, load=False):
+        if self.webMode != self.websource.get():
+            if load:
+                self.websource.set( self.webMode )
+            else:
+                self.webMode = self.websource.get()
+            if self.webMode == 'eTransport':
+                if not load:
+                    MsgBox = tkinter.messagebox.askquestion( 'Reset AOIs',
+                                                             'Choosing eTransport will clear your AOIs, are you sure?',
+                                                             icon='warning' )
+                    if MsgBox == 'yes':
+                        self.clear()
+                        self.reload()
+                self.drawtoolhandler( None, 'Circle', 'eTrans' )
+            else:
+                self.drawtoolhandler( None, self.aoimode, 'data.gov.hk' )
 
+    def drawtoolhandler(self, event=None, btn=None, web=None):
+        self.btnD2.config( state="normal" )
+        if web == 'eTrans':
+            self.btnD2.config( state="disabled" )
+        else:
+            self.btnD2.config( state='normal' )
         if btn == 'Circle':
             self.btnD2.config( relief=tkinter.RAISED )
             self.btnD.config( relief=tkinter.SUNKEN )
@@ -281,12 +303,14 @@ class frame_canvas( tkinter.Frame ):
         self.height = MainWindow.height
         self.centerX = MainWindow.width / 2
         self.centerY = MainWindow.height / 2
-        # self.canvas_marker = []
-        # self.unclosed_marker = []
+
         self.aoi = [AoiInstance( (0, 0), 'Initiate' )]
-        # self.unclosed_aoi = []
-        self.aoimode = 'None'
+        web_name = ['data.gov.hk', 'eTransport']
+        self.aoimode = 'Circle'
+        self.webMode = web_name[0]
         self.s = requests.Session()
+        self.save_cfg = {'batch': True, 'consld': True, 'dirname': '',
+                         'map': False}
         self.saves = {'saves': [''], 'dirname': None}
 
         self.frmCanvas = tkinter.Frame( self, width=MainWindow.width, height=MainWindow.height, bg='green' )
@@ -295,10 +319,9 @@ class frame_canvas( tkinter.Frame ):
         self.frmD = tkinter.Frame( self, width=80, height=50, bg='azure' )
         self.frmD.place( relx=.5, rely=.0, x=self.centerX - 35, anchor="nw" )
 
-        web_name = ['data.gov.hk', 'eTransport']
         self.websource = tkinter.StringVar( self )
-        self.websource.set( "data.gov.hk" )
-        w = tkinter.OptionMenu( self.frmD, self.websource, *web_name, command=self.drawtoolhandler )
+        self.websource.set( web_name[0] )
+        w = tkinter.OptionMenu( self.frmD, self.websource, *web_name, command=self.webListHandler )
         w.pack( side='top' )
 
         self.btnD = tkinter.Button( self.frmD, text='Circle', command=lambda: self.drawtoolhandler( btn='Circle' ) )
@@ -314,7 +337,7 @@ class frame_canvas( tkinter.Frame ):
         self.btnD3.config( state="disabled" )
         self.btnD3.pack()
 
-        self.drawtoolhandler( btn='Circle' )
+        self.drawtoolhandler( self.aoimode, self.webMode )
         #############################################################
         self.frmA = tkinter.Frame( self, width=250, height=MainWindow.height, bg='yellow' )
         self.frmA.place( relx=.5, rely=.5, x=self.centerX - 35, anchor="w" )

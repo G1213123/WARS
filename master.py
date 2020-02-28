@@ -19,9 +19,8 @@ import pickle
 import general as gn
 
 import gui_frame_canvas
-
-
-
+import gui_logging
+import gui_popups
 
 def treeview_sort_column(tv, col, reverse):
     l = [(tv.set( k, col ), k) for k in tv.get_children()]
@@ -33,6 +32,7 @@ def treeview_sort_column(tv, col, reverse):
 
     # reverse sort next time
     tv.heading( col, command=lambda: treeview_sort_column( tv, col, not reverse ) )
+
 
 class displayroutes( tkinter.Frame ):
 
@@ -54,8 +54,8 @@ class displayroutes( tkinter.Frame ):
                 Origin = row['Origin']
                 Destination = row['Destination']
                 self.bus_treeview.insert( ServiceProvider, 'end',
-                                           values=(ServiceProvider, Route, Origin, Destination) )
-        except:
+                                          values=(ServiceProvider, Route, Origin, Destination) )
+        except TypeError:
             pass
 
     def __init__(self, MainWindow, notebook):
@@ -71,7 +71,7 @@ class displayroutes( tkinter.Frame ):
 
         columns = ['Service Provider', 'Route', 'Origin', 'Destination']
         self.bus_treeview = ttk.Treeview( self, height=MainWindow.height - 608,
-                                           columns=columns )  # , show = 'headings')
+                                          columns=columns )  # , show = 'headings')
 
         vsb = ttk.Scrollbar( self, orient="vertical", command=self.bus_treeview.yview )
         vsb.pack( side=tkinter.RIGHT, fill='y' )
@@ -79,8 +79,8 @@ class displayroutes( tkinter.Frame ):
         for i, col in enumerate( columns ):
             self.bus_treeview.column( col, width=math.floor( i / 2 ) * 100 + 100 )
             self.bus_treeview.heading( col, text=col,
-                                        command=lambda _col=col: treeview_sort_column( self.bus_treeview, _col,
-                                                                                            False ) )
+                                       command=lambda _col=col: treeview_sort_column( self.bus_treeview, _col,
+                                                                                      False ) )
 
         self.bus_treeview.configure( yscrollcommand=vsb.set )
         self.bus_treeview.pack( expand=True, fill=tkinter.BOTH, padx=10, pady=10 )
@@ -92,7 +92,7 @@ class get_headway( tkinter.Frame ):
         tkinter.Frame.__init__( self, notebook, width=MainWindow.width + 100, height=MainWindow.height + 50,
                                 bg='light green' )
 
-        self.name='get_headway'
+        self.name = 'get_headway'
         self.archive = r'C:\Users\Andrew.WF.Ng\Documents\Python_Scripts\PT\gmb_achive'
 
         Mode = ['KMB', 'CTB/NWFB', 'GMB']
@@ -142,8 +142,8 @@ class get_headway( tkinter.Frame ):
         for i, col in enumerate( columns ):
             self.bus_treeview.column( col, width=150 if i == 2 else 70 )
             self.bus_treeview.heading( col, text=col,
-                                        command=lambda _col=col: treeview_sort_column( self.bus_treeview, _col,
-                                                                                            False ) )
+                                       command=lambda _col=col: treeview_sort_column( self.bus_treeview, _col,
+                                                                                      False ) )
 
         self.bus_treeview.configure( yscrollcommand=vsb.set )
         self.bus_treeview.pack( expand=True, fill=tkinter.BOTH, padx=10, pady=10 )
@@ -160,20 +160,22 @@ class get_headway( tkinter.Frame ):
             m.grid_remove()
 
     def go_bus_web(self):
-        SP = self.variable1.get().lower().split('/')[0]
+        SP = self.variable1.get().lower().split( '/' )[0]
         route = self.window.route.reader
         extra_loading = 0
         if SP == 'ctb':
-            routeSP = route[(route['Service Provider'].str.contains('CTB')) | (route['Service Provider'].str.contains('NWFB'))]['Route']
+            routeSP = route[
+                (route['Service Provider'].str.contains( 'CTB' )) | (route['Service Provider'].str.contains( 'NWFB' ))][
+                'Route']
             extra_loading = 3
         else:
             routeSP = route[route['Service Provider'].str.contains( SP.upper() )]['Route']
         print( routeSP )
-        routeSP = list(dict.fromkeys(routeSP))
+        routeSP = list( dict.fromkeys( routeSP ) )
         savename = os.path.join( self.window.frame_map.saves['dirname'],
                                  SP + '-' + self.am1.get() + '-' + self.pm1.get() + '.xlsx' )
-        self.window.progress.config(maximum=len(routeSP)+ extra_loading, value = 0 )
-        getattr( self, SP )( routeSP, savename, self.window)
+        self.window.progress.config( maximum=len( routeSP ) + extra_loading, value=0 )
+        getattr( self, SP )( routeSP, savename, self.window )
 
     def kmb(self, routeSP, savename, progress):
         import kmb
@@ -184,13 +186,14 @@ class get_headway( tkinter.Frame ):
     def gmb(self, routeSP, savename, progress):
         import gmb_achive
         gmb_headway = gmb_achive.gmb_get_headway( routeSP, am1=self.am1.get(), am2=self.am2.get(), pm1=self.pm1.get(),
-                                                  pm2=self.pm2.get(), savename=savename , window=progress, archive=self.archive)
+                                                  pm2=self.pm2.get(), savename=savename, window=progress,
+                                                  archive=self.archive )
         self.write_headway( gmb_headway.PT )
 
     def ctb(self, routeSP, savename, progress):
         import ctb
         ctb_headway = ctb.main( routeSP, am1=self.am1.get(), am2=self.am2.get(), pm1=self.pm1.get(), pm2=self.pm2.get(),
-                                savename=savename, window=progress)
+                                savename=savename, window=progress )
         self.write_headway( ctb_headway )
 
     def write_headway(self, headway):
@@ -205,48 +208,53 @@ class get_headway( tkinter.Frame ):
             period_am = row['period_am']
             period_pm = row['period_pm']
             self.bus_treeview.insert( '', 'end',
-                                       values=(id, route, info, headway_am, headway_pm, bound, period_am, period_pm) )
-            self.window.progress.config(value = 0)
+                                      values=(id, route, info, headway_am, headway_pm, bound, period_am, period_pm) )
+            self.window.progress.config( value=0 )
+
 
 class MainWindow( tkinter.Toplevel ):
 
     def savework(self):
-        path = os.path.expanduser('~/Documents/Python_Scripts/PT/saves')
+        path = os.path.expanduser( '~/Documents/Python_Scripts/PT/saves' )
         if not os.path.exists( path ):
             os.makedirs( path )
-        savename = os.path.join(path, 'workspace.pickle')
+        savename = os.path.join( path, 'workspace.pickle' )
+        PTApp = gui_popups.var_logging( self.__modules )
 
-        PTApp = {}
-        for module in self.modules['widget']:
-            data = {key:value for key, value in module.__dict__.items() if
-                    not (key.startswith( '_' ) or callable( key ) or not isinstance( value, (str, list, int, float) ))}
-            PTApp[module.name] = data
         with open( savename, 'wb' ) as handle:
             pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )
 
     def loadwork(self):
-        tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-        save = askopenfilename( title="Load save", filetypes=(("pickle", "*.pickle"), (
-            "all files", "*.*")) )  # show an "Open" dialog box and return the path to the selected file
-        with open( save, 'rb' ) as handle:
-            PTApp = pickle.load( handle )
-        for module in self.modules['widget']:
-            for key, value in PTApp[module.name].items():
-                setattr(module, key, value)
-        #self.frame_map.canvas.scan_dragto(self.frame_map.centerX, self.frame_map.centerY)
-        self.frame_map.reload(mousex=self.frame_map.centerX, mousey=self.frame_map.centerY)
+        MsgBox = 'yes'
+        if len( self.frame_map.aoi ) > 0 and self.frame_map.aoi[0].type != 'Initiate':
+            MsgBox = tkinter.messagebox.askquestion( 'Load Save FIle',
+                                                     'Loading saves will clear your AOIs, are you sure?',
+                                                     icon='warning' )
+        if MsgBox == 'yes':
+            tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
+            save = askopenfilename( title="Load save", filetypes=(("pickle", "*.pickle"), (
+                "all files", "*.*")) )  # show an "Open" dialog box and return the path to the selected file
+            with open( save, 'rb' ) as handle:
+                PTApp = pickle.load( handle )
+            for module in self.__modules:
+                for key, value in PTApp[module.name].items():
+                    setattr( module, key, value )
+            # self.frame_map.canvas.scan_dragto(self.frame_map.centerX, self.frame_map.centerY)
+            self.frame_map.reload( mousex=self.frame_map.centerX, mousey=self.frame_map.centerY )
+            self.frame_map.webListHandler( load=True )
 
     def gmb_achive(self):
         import td_fetch_gmb
         tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-        save = askdirectory(title="Select save directory")  # show an "Open" dialog box and return the path to the selected file
+        save = askdirectory(
+            title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
         if save != '':
-            td_fetch_gmb.fetch_archive(save)
+            td_fetch_gmb.fetch_archive( save )
         self.headway.archive = save
 
     def __init__(self, parent):
         tkinter.Toplevel.__init__( self, parent )
-        self.name='Mainwindow'
+        self.name = 'Mainwindow'
         self.width = 640
         self.height = 640
 
@@ -254,35 +262,37 @@ class MainWindow( tkinter.Toplevel ):
         self.minsize( self.width + 170, self.height + 100 )
         # self.window.maxsize(self.width + 200, self.height + 100)
 
-        self.filemenu=tkinter.Menu()
-        self.config(menu=self.filemenu)
-        self.menu1=tkinter.Menu(self.filemenu, tearoff=0)
-        self.menu1.add_command(label='save', command=self.savework)
-        self.menu1.add_command( label='load', command=self.loadwork)
-        self.filemenu.add_cascade(label='File', menu=self.menu1)
+        self.filemenu = tkinter.Menu()
+        self.config( menu=self.filemenu )
+        self.menu1 = tkinter.Menu( self.filemenu, tearoff=0 )
+        self.menu1.add_command( label='save', command=self.savework )
+        self.menu1.add_command( label='load', command=self.loadwork )
+        self.filemenu.add_cascade( label='File', menu=self.menu1 )
 
-        self.menu2=tkinter.Menu(self.filemenu, tearoff=0)
-        self.menu2.add_command(label='create gmb archive', command=self.gmb_achive)
-        self.filemenu.add_cascade(label='Import', menu=self.menu2)
+        self.menu2 = tkinter.Menu( self.filemenu, tearoff=0 )
+        self.menu2.add_command( label='create gmb archive', command=self.gmb_achive )
+        self.filemenu.add_cascade( label='Import', menu=self.menu2 )
 
         self.tab_parent = ttk.Notebook( self, width=self.width, height=self.height )
 
         self.frame_map = gui_frame_canvas.frame_canvas( self, self.tab_parent )
         self.route = displayroutes( self, self.tab_parent )
         self.headway = get_headway( self, self.tab_parent )
+
+        self.__modules = [self, self.frame_map, self.route, self.headway]
+        self.log = gui_logging.ShowLog( self, self.tab_parent )
         # self.frame_map.pack()
 
         self.tab_parent.add( self.frame_map, text="Map" )
         self.tab_parent.add( self.route, text="Route" )
         self.tab_parent.add( self.headway, text="headway" )
+        self.tab_parent.add( self.log, text="log" )
         self.tab_parent.pack( expand=True, fill=tkinter.BOTH )
 
-        self.modules = {'widget':[self, self.frame_map, self.route, self.headway]}
-
-        bottombar=tkinter.Frame(self, height=5)
-        bottombar.pack(expand=False, fill=tkinter.X)
-        self.progress=ttk.Progressbar(bottombar,orient=tkinter.HORIZONTAL,length=300,mode='determinate')
-        self.progress.pack(side='right')
+        bottombar = tkinter.Frame( self, height=5 )
+        bottombar.pack( expand=False, fill=tkinter.X )
+        self.progress = ttk.Progressbar( bottombar, orient=tkinter.HORIZONTAL, length=300, mode='determinate' )
+        self.progress.pack( side='right' )
 
         self.frame_map.reload()
 
@@ -292,6 +302,5 @@ if __name__ == "__main__":
     root.withdraw()
     MainWindow( root )
     root.mainloop()
-
 
 # for pyinstaller: https://github.com/pyinstaller/pyinstaller/issues/2137  ## install develop
