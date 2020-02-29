@@ -234,10 +234,12 @@ class frame_canvas( tkinter.Frame ):
             self.saves['saves'].clear()
             marker_id = 1
             for marker in self.aoi:
-                savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
-                    'batch'] else ''
-                self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
-                marker_id += 1
+                if self.webMode == 'eTransport':
+                    savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
+                        'batch'] else ''
+                    self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
+                    marker_id += 1
+                else:
 
             self.saves['dirname'] = os.path.dirname( self.saves['saves'][-1] )
             if self.save_cfg['consld']:
@@ -288,21 +290,21 @@ class frame_canvas( tkinter.Frame ):
             self.aoimode = 'Polygon'
             self.btnD3.config( state="normal" )
 
-    def __init__(self, MainWindow, notebook):
-        tkinter.Frame.__init__( self, notebook, width=MainWindow.width + 100, height=MainWindow.height + 50,
+    def __init__(self, window, notebook):
+        tkinter.Frame.__init__( self, notebook, width=window.width + 100, height=window.height + 50,
                                 bg='salmon3' )
         self.name = 'frame_canvas'
-        self.window = MainWindow
+        self.window = window
         self.zoom = 12
         self.location = "Hong Kong"
         self.api = 'AIzaSyB1ahSJjh6TtRwXmLOCTJ6eDY_dchw5v4s'
         self.lat = None
         self.lng = None
         self.minlat, self.maxlat, self.minlng, self.maxlng = None, None, None, None
-        self.width = MainWindow.width
-        self.height = MainWindow.height
-        self.centerX = MainWindow.width / 2
-        self.centerY = MainWindow.height / 2
+        self.width = window.width
+        self.height = window.height
+        self.centerX = window.width / 2
+        self.centerY = window.height / 2
 
         self.aoi = [AoiInstance( (0, 0), 'Initiate' )]
         web_name = ['data.gov.hk', 'eTransport']
@@ -313,7 +315,7 @@ class frame_canvas( tkinter.Frame ):
                          'map': False}
         self.saves = {'saves': [''], 'dirname': None}
 
-        self.frmCanvas = tkinter.Frame( self, width=MainWindow.width, height=MainWindow.height, bg='green' )
+        self.frmCanvas = tkinter.Frame( self, width=window.width, height=window.height, bg='green' )
         self.frmCanvas.place( relx=.5, anchor="n", y=0, x=-40 )
         #############################################################
         self.frmD = tkinter.Frame( self, width=80, height=50, bg='azure' )
@@ -339,7 +341,7 @@ class frame_canvas( tkinter.Frame ):
 
         self.drawtoolhandler( self.aoimode, self.webMode )
         #############################################################
-        self.frmA = tkinter.Frame( self, width=250, height=MainWindow.height, bg='yellow' )
+        self.frmA = tkinter.Frame( self, width=250, height=window.height, bg='yellow' )
         self.frmA.place( relx=.5, rely=.5, x=self.centerX - 35, anchor="w" )
 
         self.btnA = tkinter.Button( self.frmA, text='Back', command=self.back )
@@ -363,7 +365,7 @@ class frame_canvas( tkinter.Frame ):
 
         ###############################################################
         self.mapimage = self.getmap()
-        self.canvas = tkinter.Canvas( self.frmCanvas, width=MainWindow.width, height=MainWindow.height )
+        self.canvas = tkinter.Canvas( self.frmCanvas, width=window.width, height=window.height )
         self.canvas.create_image( 0, 0, image=self.mapimage, anchor=tkinter.NW, tags="map" )
         self.delta_org = [0, 0]
         self.canvas.bind( "<Button-3>", self.canvasclick )
@@ -375,4 +377,4 @@ class frame_canvas( tkinter.Frame ):
         # self.create_grid()
         self.canvas.focus_set()
 
-        MainWindow.bind( '<Return>', self.search )
+        window.bind( '<Return>', self.search )

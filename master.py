@@ -9,6 +9,7 @@ import tkinter
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter.filedialog import askopenfilename, askdirectory
+from tkinter import messagebox
 import urllib.parse
 import os
 import requests
@@ -21,6 +22,7 @@ import general as gn
 import gui_frame_canvas
 import gui_logging
 import gui_popups
+
 
 def treeview_sort_column(tv, col, reverse):
     l = [(tv.set( k, col ), k) for k in tv.get_children()]
@@ -93,7 +95,7 @@ class get_headway( tkinter.Frame ):
                                 bg='light green' )
 
         self.name = 'get_headway'
-        self.archive = r'C:\Users\Andrew.WF.Ng\Documents\Python_Scripts\PT\gmb_achive'
+        self.archive = os.path.expanduser( "~\Documents\Python_Scripts\PT\gmb_achive" )
 
         Mode = ['KMB', 'CTB/NWFB', 'GMB']
 
@@ -219,17 +221,17 @@ class MainWindow( tkinter.Toplevel ):
         if not os.path.exists( path ):
             os.makedirs( path )
         savename = os.path.join( path, 'workspace.pickle' )
-        PTApp = gui_popups.var_logging( self.__modules )
+        PTApp = gui_logging.var_logging( self.__modules )
 
         with open( savename, 'wb' ) as handle:
             pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )
 
     def loadwork(self):
         MsgBox = 'yes'
-        if len( self.frame_map.aoi ) > 0 and self.frame_map.aoi[0].type != 'Initiate':
-            MsgBox = tkinter.messagebox.askquestion( 'Load Save FIle',
-                                                     'Loading saves will clear your AOIs, are you sure?',
-                                                     icon='warning' )
+        if len( self.frame_map.aoi ) > 0 and self.frame_map.aoi[-1].type != 'Initiate':
+            MsgBox = messagebox.askquestion( 'Load Save FIle',
+                                             'Loading saves will clear your AOIs, are you sure?',
+                                             icon='warning' )
         if MsgBox == 'yes':
             tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
             save = askopenfilename( title="Load save", filetypes=(("pickle", "*.pickle"), (
@@ -289,12 +291,41 @@ class MainWindow( tkinter.Toplevel ):
         self.log = gui_logging.ShowLog( self, self.tab_parent )
         # self.frame_map.pack()
 
+        self.tab_parent.add( self.log, text="log" )
         self.tab_parent.add( self.frame_map, text="Map" )
         self.tab_parent.add( self.route, text="Route" )
         self.tab_parent.add( self.headway, text="headway" )
-        self.tab_parent.add( self.log, text="log" )
+
+        self.tab_parent.select( 1 )
         self.tab_parent.pack( expand=True, fill=tkinter.BOTH )
         self.tab_parent.bind( "<<NotebookTabChanged>>", self.handle_tab_changed )
+
+        style = ttk.Style()
+        style.theme_create( 'Cloud', settings={
+            ".": {
+                "configure": {
+                    "background": '#75b8c8',  # All colors except for active tab-button
+                }
+            },
+            "TNotebook": {
+                "configure": {
+                    "background": '#0a588f',  # color behind the notebook
+                    # [left margin, upper margin, right margin, margin beetwen tab and frames]
+                }
+            },
+            "TNotebook.Tab": {
+                "configure": {
+                    "background": '#fcf6b1',  # Color of non selected tab-button
+                    "padding": [2, 1],
+                    # [space beetwen text and horizontal tab-button border, space between text and vertical tab_button border]
+                },
+                "map": {
+                    "background": [("selected", '#aeb0ce')],  # Color of active tab
+
+                }
+            }
+        } )
+        style.theme_use( 'Cloud' )
 
         bottombar = tkinter.Frame( self, height=5 )
         bottombar.pack( expand=False, fill=tkinter.X )
