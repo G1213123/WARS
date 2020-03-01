@@ -10,6 +10,7 @@ from tkinter import messagebox
 import read_html
 import combine_routes
 import gui_popups
+import data_gov
 
 
 class AoiInstance:
@@ -233,13 +234,18 @@ class frame_canvas( tkinter.Frame ):
 
             self.saves['saves'].clear()
             marker_id = 1
+            g = data_gov.data_gov()
             for marker in self.aoi:
                 if self.webMode == 'eTransport':
                     savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
                         'batch'] else ''
                     self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
                     marker_id += 1
-                else:
+                elif marker.type == 'Polygon':
+                    polygon = Polygon( marker.point )
+                    d = g.read_by_loc( polygon )
+                    e = g.route_query_id( d['stop_id'] )
+                    f = data_gov.map_gov( stops=d, aoi=polygon )
 
             self.saves['dirname'] = os.path.dirname( self.saves['saves'][-1] )
             if self.save_cfg['consld']:
@@ -248,11 +254,12 @@ class frame_canvas( tkinter.Frame ):
             self.window.tab_parent.select( self.window.route )
 
     def back(self, event=None):
-        del self.aoi[-1]
+        if len( self.aoi ) > 1:
+            del self.aoi[-1]
         self.reload()
 
     def clear(self, event=None):
-        self.aoi = []
+        self.aoi = [AoiInstance( (0, 0), 'Initiate' )]
         self.reload()
 
     def webListHandler(self, event=None, load=False):
