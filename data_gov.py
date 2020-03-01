@@ -1,3 +1,5 @@
+from tkinter.filedialog import asksaveasfilename
+
 import pandas as pd
 import requests
 from io import StringIO
@@ -9,8 +11,7 @@ import geopandas as gpd
 import webbrowser
 import pyproj
 
-# point for temp. loading of database
-global cache
+global cache  # pointer for temp. loading of database
 
 
 class map_gov:
@@ -46,26 +47,26 @@ class map_gov:
 def pt_in_polygon(x, y, polygon):
     return polygon.contains( Point( x, y ) )
 
+
 class data_gov:
     def __init__(self):
-        self.cache_path = os.path.expanduser('~/Documents/Python_Scripts/WARS/cache')
-        self.fields=['stops', 'stop_times', 'trips', 'routes']
-        url='https://static.data.gov.hk/td/pt-headway-en/'
-        cache={}
+        self.cache_path = os.path.expanduser( '~/Documents/Python_Scripts/WARS/cache' )
+        self.fields = ['stops', 'stop_times', 'trips', 'routes']
+        url = 'https://static.data.gov.hk/td/pt-headway-en/'
+        cache = {}
 
-        if not os.path.exists(self.cache_path):
-            os.makedirs(self.cache_path)
+        if not os.path.exists( self.cache_path ):
+            os.makedirs( self.cache_path )
 
         for f in self.fields:
-            if not os.path.exists(self.d_path(f)):
-                g = requests.get(url+f+'.txt').content
+            if not os.path.exists( self.d_path( f ) ):
+                g = requests.get( url + f + '.txt' ).content
                 cache[f] = pd.read_csv( StringIO( g.decode( 'utf-8' ) ) )
-                cache[f].to_csv(self.d_path(f))
+                cache[f].to_csv( self.d_path( f ) )
 
     def d_path(self, f):
-        return os.path.join(self.cache_path, f+'.csv')
+        return os.path.join( self.cache_path, f + '.csv' )
 
-                
     def read(self, f):
         cache = pd.read_csv( self.d_path( f ), index_col=0 )
         return cache
@@ -82,15 +83,40 @@ class data_gov:
 
     def route_query_id(self, stop):
         cache = self.read_by_field( 'stops', 'stop_id', stop )
-        cache=cache.merge(self.read('stop_times'), on='stop_id', how='left')
-        cache=cache.merge(self.read('trips'), on='trip_id', how='left')
+        cache = cache.merge( self.read( 'stop_times' ), on='stop_id', how='left' )
+        cache = cache.merge( self.read( 'trips' ), on='trip_id', how='left' )
         cache = cache.merge( self.read( 'routes' ), on='route_id', how='left' )
         return cache
 
+    def route_query_polygon(self, polygon):
+        d = self.read_by_loc( polygon )
+        cache = self.route_query_id( d['stop_id'] )['route_id'].drop_duplicates()
+        cache = self.read_by_field( 'routes', 'route_id', cache )
+        return d, cache
+
+    def gui_handler(self, polygon, savename='', show=False):
+        if savename == '':
+            # File path prompt
+            from tkinter import Tk
+            Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
+            savename = asksaveasfilename( defaultextension=".csv", title="save file",
+                                          filetypes=(("comma seperated values", "*.csv"), ("all files", "*.*")) )
+
+        d, cache = self.route_query_polygon( polygon )
+        routes = pd.DataFrame( columns=['Service Provider', 'Route', 'Origin', 'Destination'] )
+        routes['Service Provider'] = cache['agency_id']
+        routes['Route'] = cache['route_short_name']
+        routes['Origin'] = cache['route_long_name'].str.split( ' - ', n=1, expand=True )[0]
+        routes['Destination'] = cache['route_long_name'].str.split( ' - ', n=1, expand=True )[1]
+        routes.to_csv( savename )
+        if show:
+            map_gov( stops=d, aoi=polygon )
+        return savename
+
 if __name__ == '__main__':
     polygon = Polygon( [(22.322304, 114.188933), (22.322709, 114.190472), (22.320541, 114.189943)] )
-    g=data_gov()
+    g = data_gov()
     d = g.read_by_loc( polygon )
     e = g.route_query_id( d['stop_id'] )
     f = map_gov( stops=d, aoi=polygon )
-    q=1
+    q = 1

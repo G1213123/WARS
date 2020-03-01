@@ -45,6 +45,7 @@ class displayroutes( tkinter.Frame ):
 
     def read_csv(self, name):
         self.variable.set( name )
+        self.bus_treeview.delete( *self.bus_treeview.get_children() )
         try:
             self.reader = pd.read_csv( name, delimiter=',' )
             self.reader = self.reader.fillna( '' )
@@ -326,6 +327,10 @@ class MainWindow( tkinter.Toplevel ):
             }
         } )
         style.theme_use( 'Cloud' )
+        TROUGH_COLOR = 'blue'
+        BAR_COLOR = 'green'
+        style.configure( "bar.Horizontal.TProgressbar", troughcolor=TROUGH_COLOR, bordercolor=TROUGH_COLOR,
+                         background=BAR_COLOR, lightcolor=BAR_COLOR, darkcolor=BAR_COLOR )
 
         bottombar = tkinter.Frame( self, height=5 )
         bottombar.pack( expand=False, fill=tkinter.X )

@@ -5,7 +5,10 @@ import os
 import requests
 import math
 from shapely.geometry import Point, Polygon
+import shapely.geometry
 from tkinter import messagebox
+import numpy as np
+import geog
 
 import read_html
 import combine_routes
@@ -226,7 +229,6 @@ class frame_canvas( tkinter.Frame ):
         self.reload()
 
     def to_read_html(self, event=None):
-        d = 1
         popup = gui_popups.SaveSetting( self.save_cfg['dirname'] )
         if len( popup.out ) > 0:
             self.save_cfg = popup.out
@@ -234,18 +236,27 @@ class frame_canvas( tkinter.Frame ):
 
             self.saves['saves'].clear()
             marker_id = 1
-            g = data_gov.data_gov()
             for marker in self.aoi:
+                savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
+                    'batch'] else ''
                 if self.webMode == 'eTransport':
-                    savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
-                        'batch'] else ''
-                    self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
-                    marker_id += 1
-                elif marker.type == 'Polygon':
-                    polygon = Polygon( marker.point )
-                    d = g.read_by_loc( polygon )
-                    e = g.route_query_id( d['stop_id'] )
-                    f = data_gov.map_gov( stops=d, aoi=polygon )
+                    if marker.type == 'Circle':
+                        self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
+                        marker_id += 1
+                elif self.webMode == 'data.gov.hk':
+                    if marker.type == 'Polygon':
+                        polygon = Polygon( marker.point )
+                    elif marker.type == 'Circle':
+                        p = marker.point
+                        n_points = 20
+                        angles = np.linspace( 0, 360, n_points )
+                        d = 500
+                        polygon = Polygon( geog.propagate( p, angles, d ) )
+                    else:
+                        polygon = None
+                    if polygon is not None:
+                        self.saves['saves'].append(
+                            data_gov.data_gov().gui_handler( polygon, savename, self.save_cfg['map'] ) )
 
             self.saves['dirname'] = os.path.dirname( self.saves['saves'][-1] )
             if self.save_cfg['consld']:
@@ -270,12 +281,13 @@ class frame_canvas( tkinter.Frame ):
                 self.webMode = self.websource.get()
             if self.webMode == 'eTransport':
                 if not load:
-                    MsgBox = tkinter.messagebox.askquestion( 'Reset AOIs',
-                                                             'Choosing eTransport will clear your AOIs, are you sure?',
-                                                             icon='warning' )
-                    if MsgBox == 'yes':
-                        self.clear()
-                        self.reload()
+                    if not self.aoi[-1].type == 'Initiate':
+                        MsgBox = tkinter.messagebox.askquestion( 'Reset AOIs',
+                                                                 'Choosing eTransport will clear your AOIs, are you sure?',
+                                                                 icon='warning' )
+                        if MsgBox == 'yes':
+                            self.clear()
+                            self.reload()
                 self.drawtoolhandler( None, 'Circle', 'eTrans' )
             else:
                 self.drawtoolhandler( None, self.aoimode, 'data.gov.hk' )
