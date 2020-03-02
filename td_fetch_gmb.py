@@ -6,7 +6,6 @@ Created on Mon Sep 23 15:19:41 2019
 """
 import pandas as pd
 import requests
-import datetime
 from bs4 import BeautifulSoup
 
 

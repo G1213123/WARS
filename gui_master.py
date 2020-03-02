@@ -4,24 +4,18 @@ Created on Jan 1, 2020
 @author: Andrew.WF.Ng
 '''
 
-import base64
-import tkinter
-from tkinter import ttk
-from tkinter import filedialog
-from tkinter.filedialog import askopenfilename, askdirectory
-from tkinter import messagebox
-import urllib.parse
-import os
-import requests
 import math
-import shelve
-import pandas as pd
+import os
 import pickle
-from ttkthemes import ThemedStyle
+import tkinter
+from tkinter import messagebox
+from tkinter import ttk
+from tkinter.filedialog import askopenfilename, askdirectory
+
+import pandas as pd
 
 import gui_frame_canvas
 import gui_logging
-import gui_popups
 
 
 def treeview_sort_column(tv, col, reverse):
@@ -244,7 +238,7 @@ class MainWindow( tkinter.Toplevel ):
                     setattr( module, key, value )
             # self.frame_map.canvas.scan_dragto(self.frame_map.centerX, self.frame_map.centerY)
             self.frame_map.reload( mousex=self.frame_map.centerX, mousey=self.frame_map.centerY )
-            self.frame_map.webListHandler( load=True )
+            self.frame_map.web_list_handler( load=True )
 
     def gmb_achive(self):
         import td_fetch_gmb

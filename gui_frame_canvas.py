@@ -1,19 +1,17 @@
 import base64
+import math
+import os
 import tkinter
 import urllib.parse
-import os
-import requests
-import math
-from shapely.geometry import Point, Polygon
-import shapely.geometry
 from tkinter import messagebox
-import numpy as np
-import geog
 
-import read_html
+import requests
+from shapely.geometry import Point, Polygon
+
 import combine_routes
-import gui_popups
 import data_gov
+import gui_popups
+import read_html
 
 
 class AoiInstance:
@@ -275,7 +273,7 @@ class frame_canvas( tkinter.Frame ):
         self.aoi = [AoiInstance( (0, 0), 'Initiate' )]
         self.reload()
 
-    def webListHandler(self, event=None, load=False):
+    def web_list_handler(self, event=None, load=False):
         if self.webMode != self.websource.get():
             if load:
                 self.websource.set( self.webMode )
@@ -284,10 +282,10 @@ class frame_canvas( tkinter.Frame ):
             if self.webMode == 'eTransport':
                 if not load:
                     if not self.aoi[-1].type == 'Initiate':
-                        MsgBox = tkinter.messagebox.askquestion( 'Reset AOIs',
+                        msg_box = tkinter.messagebox.askquestion( 'Reset AOIs',
                                                                  'Choosing eTransport will clear your AOIs, are you sure?',
-                                                                 icon='warning' )
-                        if MsgBox == 'yes':
+                                                                  icon='warning' )
+                        if msg_box == 'yes':
                             self.clear()
                             self.reload()
                 self.drawtoolhandler( None, 'Circle', 'eTrans' )
@@ -344,7 +342,7 @@ class frame_canvas( tkinter.Frame ):
 
         self.websource = tkinter.StringVar( self )
         self.websource.set( web_name[0] )
-        w = tkinter.OptionMenu( self.frmD, self.websource, *web_name, command=self.webListHandler )
+        w = tkinter.OptionMenu( self.frmD, self.websource, *web_name, command=self.web_list_handler )
         w.pack( side='top' )
 
         self.btnD = tkinter.Button( self.frmD, text='Circle', command=lambda: self.drawtoolhandler( btn='Circle' ) )
