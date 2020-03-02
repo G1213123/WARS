@@ -14,13 +14,15 @@ Created on Mon Sep 23 10:02:03 2019
 
 # http://www.16seats.net/chi/gmb/gh_2.html
 
-import pandas as pd
-import general as gn
 import datetime
+
+import pandas as pd
 from bs4 import BeautifulSoup
 
+import general as gn
 
-class search_gmb:
+
+class SearchGMB:
     def __init__(self, j, dist, save):
         self.j = j
         self.dist = dist
@@ -100,7 +102,7 @@ class gmb_get_headway:
 
         for j in tango:  # j='61S'
             self.j = j
-            f, fail = search_gmb( j, self.dist, self.archive ).open_gmb()
+            f, fail = SearchGMB( j, self.dist, self.archive ).open_gmb()
             if f is not None:
                 html = f.read()
                 soup = BeautifulSoup( html, 'html.parser' )

@@ -1,8 +1,10 @@
-import tkinter
-from tkinter import filedialog
 import os
 import pickle
+import tkinter
+from tkinter import filedialog
+
 import gui_logging
+
 
 class SaveSetting( tkinter.Toplevel ):
     """    # Prompt for configuring save settings
@@ -77,7 +79,6 @@ class SaveSetting( tkinter.Toplevel ):
         # Set popup focus and wait
         self.grab_set()
         self.wait_window()
-
 
     def browse_button(self):
         # file dialog prompt for file picking

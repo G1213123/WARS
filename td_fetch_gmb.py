@@ -6,11 +6,10 @@ Created on Mon Sep 23 15:19:41 2019
 """
 import pandas as pd
 import requests
-import datetime
 from bs4 import BeautifulSoup
 
 
-def fetch_archive(path):
+def fetch_archive(path, window=None):
     for id in range( 0, 4000 ):
         print( id )
         with requests.Session() as s:
@@ -23,3 +22,6 @@ def fetch_archive(path):
                 save_path = path + r'\%s.html' % head[0][0][:len( head[0][0] ) - 1].replace( ' ', '_' )
                 with open( save_path, "w", encoding="utf-8" ) as file:
                     file.write( str( soup ) )
+        if window is not None:
+            window.progress['value'] += 1
+            window.update()

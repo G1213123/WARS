@@ -1,9 +1,9 @@
 import pickle
-import tkinter
-import codecs
 import pickletools
-from io import StringIO
 import sys
+import tkinter
+from io import StringIO
+
 
 def var_logging(modules):
     # modules = [self, self.frame_map, self.route, self.headway]
