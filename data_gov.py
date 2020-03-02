@@ -86,7 +86,7 @@ class data_gov:
             cache = cache[cache.apply( lambda x: pt_in_polygon( x['stop_lat'], x['stop_lon'], polygon ), axis=1 )]
         else:
             cache = cache[cache.apply( lambda x: geopy.distance.vincenty( (polygon.x, polygon.y), (
-            x['stop_lat'], x['stop_lon']) ).meters <= radius, axis=1 )]
+                x['stop_lat'], x['stop_lon']) ).meters <= radius, axis=1 )]
         return cache
 
     def route_query_id(self, stop):
@@ -120,6 +120,7 @@ class data_gov:
         if show:
             map_gov( stops=d, aoi=shape, radius=radius, savename=savename.replace( '.csv', '.html' ) )
         return savename
+
 
 if __name__ == '__main__':
     polygon = Polygon( [(22.322304, 114.188933), (22.322709, 114.190472), (22.320541, 114.189943)] )
