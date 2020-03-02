@@ -96,7 +96,7 @@ class get_headway( tkinter.Frame ):
                                 bg='light green' )
 
         self.name = 'get_headway'
-        self.archive = os.path.expanduser( "~\Documents\Python_Scripts\PT\gmb_achive" )
+        self.archive = os.path.expanduser( "~\Documents\Python_Scripts\WARS\gmb_achive" )
 
         Mode = ['KMB', 'CTB/NWFB', 'GMB']
 
@@ -252,7 +252,8 @@ class MainWindow( tkinter.Toplevel ):
         save = askdirectory(
             title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
         if save != '':
-            td_fetch_gmb.fetch_archive( save )
+            self.progress.config( maximum=4000 + 1, value=1 )
+            td_fetch_gmb.fetch_archive( save, self )
         self.headway.archive = save
 
     def handle_tab_changed(self, event):
