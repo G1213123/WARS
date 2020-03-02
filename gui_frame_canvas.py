@@ -235,6 +235,7 @@ class frame_canvas( tkinter.Frame ):
             print( self.save_cfg )
 
             self.saves['saves'].clear()
+            self.window.progress.config( maximum=len( self.aoi ) + 1, value=1 )
             marker_id = 1
             for marker in self.aoi:
                 savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
@@ -242,21 +243,22 @@ class frame_canvas( tkinter.Frame ):
                 if self.webMode == 'eTransport':
                     if marker.type == 'Circle':
                         self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
-                        marker_id += 1
                 elif self.webMode == 'data.gov.hk':
                     if marker.type == 'Polygon':
-                        polygon = Polygon( marker.point )
+                        d = 0
+                        shape = Polygon( marker.point )
                     elif marker.type == 'Circle':
-                        p = marker.point
-                        n_points = 20
-                        angles = np.linspace( 0, 360, n_points )
                         d = 500
-                        polygon = Polygon( geog.propagate( p, angles, d ) )
+                        shape = Point( marker.point[0] )
                     else:
-                        polygon = None
-                    if polygon is not None:
+                        shape = None
+                        marker_id -= 1
+                    if shape is not None:
                         self.saves['saves'].append(
-                            data_gov.data_gov().gui_handler( polygon, savename, self.save_cfg['map'] ) )
+                            data_gov.data_gov().gui_handler( shape, d, savename, self.save_cfg['showmap'] ) )
+                marker_id += 1
+                self.window.progress['value'] += 1
+                self.window.update()
 
             self.saves['dirname'] = os.path.dirname( self.saves['saves'][-1] )
             if self.save_cfg['consld']:
@@ -358,7 +360,7 @@ class frame_canvas( tkinter.Frame ):
         self.btnD3.config( state="disabled" )
         self.btnD3.pack()
 
-        self.drawtoolhandler( self.aoimode, self.webMode )
+        self.drawtoolhandler( btn=self.aoimode, web=self.webMode )
         #############################################################
         self.frmA = tkinter.Frame( self, width=250, height=window.height, bg='yellow' )
         self.frmA.place( relx=.5, rely=.5, x=self.centerX - 35, anchor="w" )

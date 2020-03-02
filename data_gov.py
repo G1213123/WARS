@@ -10,13 +10,14 @@ import folium
 import geopandas as gpd
 import webbrowser
 import pyproj
+import geopy.distance
 
 global cache  # pointer for temp. loading of database
 
 
 class map_gov:
     def __init__(self, **kwargs):
-        self.__slots__ = ['stops', 'aoi']
+        self.__slots__ = ['stops', 'aoi', 'radius', 'savename']
         self.__dict__.update( kwargs )
 
         centroid = self.aoi.centroid
@@ -24,10 +25,10 @@ class map_gov:
         self.map_stop()
         self.map_aoi()
 
-        self.m.save( 'test.html' )
+        self.m.save( self.savename )
 
         if True:
-            webbrowser.open( 'test.html' )
+            webbrowser.open( self.savename )
 
     def map_stop(self):
         for key, b_stop in self.stops.iterrows():
@@ -38,10 +39,13 @@ class map_gov:
                            popup=description, color='#3186cc', fill_color='#3186cc' ).add_to( self.m )
 
     def map_aoi(self):
-
-        polygon_geom = gpd.GeoDataFrame( index=[0], geometry=[self.aoi] )
-        polygon_geom.crs = {'init': 'epsg:4326'}
-        folium.GeoJson( polygon_geom ).add_to( self.m )
+        if isinstance( self.aoi, Polygon ):
+            loc_list = list( self.aoi.exterior.coords )
+            folium.Polygon( loc_list, popup=str( loc_list ), color='#3186cc', fill_color='#3186cc' ).add_to( self.m )
+        elif isinstance( self.aoi, Point ):
+            folium.Circle( [self.aoi.x, self.aoi.y], radius=self.radius,
+                           popup=str( self.radius ) + 'm lat=%s lon=%s' % (self.aoi.x, self.aoi.y), color='#3186cc',
+                           fill_color='#3186cc' ).add_to( self.m )
 
 
 def pt_in_polygon(x, y, polygon):
@@ -76,9 +80,13 @@ class data_gov:
         cache = cache[cache[field].isin( value )]
         return cache
 
-    def read_by_loc(self, polygon):
+    def read_by_loc(self, polygon, radius):
         cache = self.read( 'stops' )
-        cache = cache[cache.apply( lambda x: pt_in_polygon( x['stop_lat'], x['stop_lon'], polygon ), axis=1 )]
+        if isinstance( polygon, Polygon ):
+            cache = cache[cache.apply( lambda x: pt_in_polygon( x['stop_lat'], x['stop_lon'], polygon ), axis=1 )]
+        else:
+            cache = cache[cache.apply( lambda x: geopy.distance.vincenty( (polygon.x, polygon.y), (
+            x['stop_lat'], x['stop_lon']) ).meters <= radius, axis=1 )]
         return cache
 
     def route_query_id(self, stop):
@@ -88,13 +96,13 @@ class data_gov:
         cache = cache.merge( self.read( 'routes' ), on='route_id', how='left' )
         return cache
 
-    def route_query_polygon(self, polygon):
-        d = self.read_by_loc( polygon )
+    def route_query_polygon(self, polygon, radius):
+        d = self.read_by_loc( polygon, radius )
         cache = self.route_query_id( d['stop_id'] )['route_id'].drop_duplicates()
         cache = self.read_by_field( 'routes', 'route_id', cache )
         return d, cache
 
-    def gui_handler(self, polygon, savename='', show=False):
+    def gui_handler(self, shape, radius=0, savename='', show=False):
         if savename == '':
             # File path prompt
             from tkinter import Tk
@@ -102,7 +110,7 @@ class data_gov:
             savename = asksaveasfilename( defaultextension=".csv", title="save file",
                                           filetypes=(("comma seperated values", "*.csv"), ("all files", "*.*")) )
 
-        d, cache = self.route_query_polygon( polygon )
+        d, cache = self.route_query_polygon( shape, radius )
         routes = pd.DataFrame( columns=['Service Provider', 'Route', 'Origin', 'Destination'] )
         routes['Service Provider'] = cache['agency_id']
         routes['Route'] = cache['route_short_name']
@@ -110,7 +118,7 @@ class data_gov:
         routes['Destination'] = cache['route_long_name'].str.split( ' - ', n=1, expand=True )[1]
         routes.to_csv( savename )
         if show:
-            map_gov( stops=d, aoi=polygon )
+            map_gov( stops=d, aoi=shape, radius=radius, savename=savename.replace( '.csv', '.html' ) )
         return savename
 
 if __name__ == '__main__':

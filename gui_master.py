@@ -17,7 +17,7 @@ import math
 import shelve
 import pandas as pd
 import pickle
-import general as gn
+from ttkthemes import ThemedStyle
 
 import gui_frame_canvas
 import gui_logging
@@ -327,14 +327,12 @@ class MainWindow( tkinter.Toplevel ):
             }
         } )
         style.theme_use( 'Cloud' )
-        TROUGH_COLOR = 'blue'
-        BAR_COLOR = 'green'
-        style.configure( "bar.Horizontal.TProgressbar", troughcolor=TROUGH_COLOR, bordercolor=TROUGH_COLOR,
-                         background=BAR_COLOR, lightcolor=BAR_COLOR, darkcolor=BAR_COLOR )
+        style.configure( "red.Horizontal.TProgressbar", troughcolor='azure', background='#98FF98' )
 
         bottombar = tkinter.Frame( self, height=5 )
         bottombar.pack( expand=False, fill=tkinter.X )
-        self.progress = ttk.Progressbar( bottombar, orient=tkinter.HORIZONTAL, length=300, mode='determinate' )
+        self.progress = ttk.Progressbar( bottombar, style="red.Horizontal.TProgressbar", orient=tkinter.HORIZONTAL,
+                                         length=300, mode='determinate' )
         self.progress.pack( side='right' )
 
         self.frame_map.reload()
