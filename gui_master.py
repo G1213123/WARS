@@ -212,7 +212,7 @@ class get_headway( tkinter.Frame ):
 class MainWindow( tkinter.Toplevel ):
 
     def savework(self):
-        path = os.path.expanduser( '~/Documents/Python_Scripts/PT/saves' )
+        path = os.path.expanduser( '~/Documents/Python_Scripts/WARS/saves' )
         if not os.path.exists( path ):
             os.makedirs( path )
         savename = os.path.join( path, 'workspace.pickle' )
