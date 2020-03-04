@@ -243,7 +243,7 @@ class frame_canvas(tkinter.Frame):
                     'batch'] else ''
                 if self.webMode == 'eTransport':
                     if marker.type == 'Circle':
-                        self.saves['saves'].append(read_html.main(*marker.point[0], savename, self.save_cfg['map']))
+                        self.saves['saves'].append(read_html.main(*marker.point[0], savename, self.save_cfg['showmap']))
                 elif self.webMode == 'data.gov.hk':
                     if marker.type == 'Polygon':
                         d = 0
