@@ -149,13 +149,26 @@ class frame_canvas( tkinter.Frame ):
                 radius = 500
             size = radius / scale
             widget.create_oval( canvasx - size, canvasy - size, canvasx + size, canvasy + size, width=2 )
-
+            widget.create_text( canvasx, canvasy,
+                                text='lat=%s\nlon=%s\nradius=%s' % (point['lat'], point['lng'], radius),
+                                tags='CircleLabel' )
+            if not self.showlbl:
+                self.canvas.delete( 'CircleLabel' )
             self.aoi.append( AoiInstance( pt, 'Circle', radius ) )
 
     def close_polygon(self):
         self.canvas.create_line( *self.rev_FX( *self.aoi[-1].point[0] ),
                                  *self.rev_FX( *self.aoi[-1].point[-1] ) )
         self.aoi[-1].close_polygon()
+
+    def label_circle(self):
+        self.showlbl = not self.showlbl
+        if self.showlbl:
+            self.btnD4.config( relief=tkinter.SUNKEN )
+        else:
+            self.btnD4.config( relief=tkinter.RAISED )
+
+        self.reload()
 
     def move_from(self, event):
         ''' Remember previous coordinates for scrolling with the mouse '''
@@ -201,6 +214,11 @@ class frame_canvas( tkinter.Frame ):
                 size = marker.radius / scale
                 x, y = self.rev_FX( *marker.point[0] )
                 self.canvas.create_oval( x - size, y - size, x + size, y + size, width=2 )
+                if self.showlbl:
+                    self.canvas.create_text( x, y, text='lat=%s\nlon=%s\nradius=%s' % (*marker.point[0], marker.radius),
+                                             tags='CircleLabel' )
+                else:
+                    self.canvas.delete( 'CircleLabel' )
             elif marker.type == 'Polygon':
                 vetices = marker.point
                 for id, val in enumerate( vetices ):
@@ -208,6 +226,7 @@ class frame_canvas( tkinter.Frame ):
                     self.canvas.create_oval( x - 2, y - 2, x + 2, y + 2, width=2, fill='red', outline='red' )
                     self.canvas.create_line( *self.rev_FX( vetices[id - 1][0], vetices[id - 1][1] ),
                                              *self.rev_FX( vetices[id][0], vetices[id][1] ) )
+
         self.canvas.focus_set()
         self.window.update()
 
@@ -240,7 +259,8 @@ class frame_canvas( tkinter.Frame ):
                     'batch'] else ''
                 if self.webMode == 'eTransport':
                     if marker.type == 'Circle':
-                        self.saves['saves'].append( read_html.main( *marker.point[0], savename, self.save_cfg['map'] ) )
+                        self.saves['saves'].append(
+                            read_html.main( *marker.point[0], savename, self.save_cfg['showmap'] ) )
                 elif self.webMode == 'data.gov.hk':
                     if marker.type == 'Polygon':
                         d = 0
@@ -290,11 +310,13 @@ class frame_canvas( tkinter.Frame ):
                             self.reload()
                 self.drawtoolhandler( None, 'Circle', 'eTrans' )
             else:
+                tkinter.messagebox.showwarning( 'Warning',
+                                                'data.gov.hk dataset supports bus stop only, gmb data is omitted :(' )
                 self.drawtoolhandler( None, self.aoimode, 'data.gov.hk' )
 
     def drawtoolhandler(self, event=None, btn=None, web=None):
         self.btnD2.config( state="normal" )
-        if web == 'eTrans':
+        if web == 'eTransport':
             self.btnD2.config( state="disabled" )
         else:
             self.btnD2.config( state='normal' )
@@ -328,7 +350,8 @@ class frame_canvas( tkinter.Frame ):
         self.aoi = [AoiInstance( (0, 0), 'Initiate' )]
         web_name = ['data.gov.hk', 'eTransport']
         self.aoimode = 'Circle'
-        self.webMode = web_name[0]
+        self.webMode = web_name[1]
+        self.showlbl = False
         self.s = requests.Session()
         self.save_cfg = {'batch': True, 'consld': True, 'dirname': '',
                          'map': False}
@@ -341,7 +364,7 @@ class frame_canvas( tkinter.Frame ):
         self.frmD.place( relx=.5, rely=.0, x=self.centerX - 35, anchor="nw" )
 
         self.websource = tkinter.StringVar( self )
-        self.websource.set( web_name[0] )
+        self.websource.set( self.webMode )
         w = tkinter.OptionMenu( self.frmD, self.websource, *web_name, command=self.web_list_handler )
         w.pack( side='top' )
 
@@ -357,6 +380,9 @@ class frame_canvas( tkinter.Frame ):
         self.btnD3 = tkinter.Button( self.frmD, text='Close\nPolygon', command=self.close_polygon )
         self.btnD3.config( state="disabled" )
         self.btnD3.pack()
+
+        self.btnD4 = tkinter.Button( self.frmD, text='Show\nCircle\nDetails', command=self.label_circle )
+        self.btnD4.pack()
 
         self.drawtoolhandler( btn=self.aoimode, web=self.webMode )
         #############################################################

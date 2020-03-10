@@ -90,7 +90,14 @@ class get_headway( tkinter.Frame ):
                                 bg='light green' )
 
         self.name = 'get_headway'
-        self.archive = os.path.expanduser( "~\Documents\Python_Scripts\WARS\gmb_achive" )
+
+        directory = os.path.expanduser( '~/Documents/Python_Scripts/WARS/cfg' )
+        self.savename = os.path.join( directory, 'archive.cfg' )
+        try:
+            with open( self.savename, 'rb' ) as handle:
+                self.archive = pickle.load( handle )
+        except:
+            self.archive = ''
 
         Mode = ['KMB', 'CTB/NWFB', 'GMB']
 
@@ -128,7 +135,7 @@ class get_headway( tkinter.Frame ):
         l = tkinter.Entry( self.input_panelB, width=20, textvariable=self.pm2 )
         l.pack( side='left' )
 
-        self.variable2 = tkinter.StringVar( self )
+        self.variable2 = tkinter.StringVar( self, value='Select District' )
 
         columns = ['id', 'route', 'info', 'headway_am', 'headway_pm', 'bound', 'period_am', 'period_pm']
         self.bus_treeview = ttk.Treeview( self, height=MainWindow.height - 608, columns=columns, show='headings' )
@@ -181,11 +188,15 @@ class get_headway( tkinter.Frame ):
         self.write_headway( kmb_headway )
 
     def gmb(self, routeSP, savename, progress):
-        import gmb_achive
-        gmb_headway = gmb_achive.gmb_get_headway( routeSP, am1=self.am1.get(), am2=self.am2.get(), pm1=self.pm1.get(),
-                                                  pm2=self.pm2.get(), savename=savename, window=progress,
-                                                  archive=self.archive )
-        self.write_headway( gmb_headway.PT )
+        if self.archive == '':
+            messagebox.showwarning( 'Warning', 'Please create gmb archive through \n "Import > create gmb archive"' )
+        else:
+            import gmb_achive
+            gmb_headway = gmb_achive.gmb_get_headway( routeSP, am1=self.am1.get(), am2=self.am2.get(),
+                                                      pm1=self.pm1.get(),
+                                                      pm2=self.pm2.get(), savename=savename, window=progress,
+                                                      archive=self.archive )
+            self.write_headway( gmb_headway.PT )
 
     def ctb(self, routeSP, savename, progress):
         import ctb
@@ -212,24 +223,25 @@ class get_headway( tkinter.Frame ):
 class MainWindow( tkinter.Toplevel ):
 
     def savework(self):
-        path = os.path.expanduser( '~/Documents/Python_Scripts/PT/saves' )
-        if not os.path.exists( path ):
-            os.makedirs( path )
-        savename = os.path.join( path, 'workspace.pickle' )
-        PTApp = gui_logging.var_logging( self.__modules )
+        tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
+        path = askdirectory(
+            title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
+        if path != '':
+            savename = os.path.join( path, 'workspace.wsv' )
+            PTApp = gui_logging.var_logging( self.__modules )
 
-        with open( savename, 'wb' ) as handle:
-            pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )
+            with open( savename, 'wb' ) as handle:
+                pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )
 
     def loadwork(self):
         MsgBox = 'yes'
         if len( self.frame_map.aoi ) > 0 and self.frame_map.aoi[-1].type != 'Initiate':
-            MsgBox = messagebox.askquestion( 'Load Save FIle',
+            MsgBox = messagebox.askquestion( 'Load Save File',
                                              'Loading saves will clear your AOIs, are you sure?',
                                              icon='warning' )
         if MsgBox == 'yes':
             tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-            save = askopenfilename( title="Load save", filetypes=(("pickle", "*.pickle"), (
+            save = askopenfilename( title="Load save", filetypes=(("save", "*.wsv"), (
                 "all files", "*.*")) )  # show an "Open" dialog box and return the path to the selected file
             with open( save, 'rb' ) as handle:
                 PTApp = pickle.load( handle )
@@ -240,7 +252,7 @@ class MainWindow( tkinter.Toplevel ):
             self.frame_map.reload( mousex=self.frame_map.centerX, mousey=self.frame_map.centerY )
             self.frame_map.web_list_handler( load=True )
 
-    def gmb_achive(self):
+    def gmb_archive(self):
         import td_fetch_gmb
         tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
         save = askdirectory(
@@ -249,6 +261,13 @@ class MainWindow( tkinter.Toplevel ):
             self.progress.config( maximum=4000 + 1, value=1 )
             td_fetch_gmb.fetch_archive( save, self )
         self.headway.archive = save
+        directory = os.path.expanduser( '~/Documents/Python_Scripts/WARS/cfg' )
+        if not os.path.exists( directory ):
+            os.makedirs( directory )
+        savename = os.path.join( directory, 'archive.cfg' )
+        with open( savename, 'wb' ) as handle:
+            pickle.dump( save, handle, protocol=pickle.HIGHEST_PROTOCOL )
+        self.destroy()
 
     def handle_tab_changed(self, event):
         selection = event.widget.select()
@@ -274,7 +293,7 @@ class MainWindow( tkinter.Toplevel ):
         self.filemenu.add_cascade( label='File', menu=self.menu1 )
 
         self.menu2 = tkinter.Menu( self.filemenu, tearoff=0 )
-        self.menu2.add_command( label='create gmb archive', command=self.gmb_achive )
+        self.menu2.add_command( label='create gmb archive', command=self.gmb_archive )
         self.filemenu.add_cascade( label='Import', menu=self.menu2 )
 
         self.tab_parent = ttk.Notebook( self, width=self.width, height=self.height )
