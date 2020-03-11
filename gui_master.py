@@ -223,12 +223,14 @@ class get_headway( tkinter.Frame ):
 class MainWindow( tkinter.Toplevel ):
 
     def savework(self):
+
         tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
         path = askdirectory(
             title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
         if path != '':
             savename = os.path.join( path, 'workspace.wsv' )
             PTApp = gui_logging.var_logging( self.__modules )
+
 
             with open( savename, 'wb' ) as handle:
                 pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )

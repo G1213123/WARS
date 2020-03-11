@@ -29,7 +29,7 @@ class SaveSetting( tkinter.Toplevel ):
         directory = os.path.expanduser( '~/Documents/Python_Scripts/WARS/cfg' )
         if not os.path.exists( directory ):
             os.makedirs( directory )
-        self.savename = os.path.join( directory, 'save.cfg' )
+        self.savename = directory +  r'/save.cfg'
         self.__modules = [self]  # declare self as the only module for save setting logging
 
         # load previous settings, if not exist, load default settings
@@ -101,8 +101,10 @@ class SaveSetting( tkinter.Toplevel ):
         self.out = {'batch': self.tkv_batch.get(), 'consld': self.tkv_consld.get(), 'dirname': self.tk_textbox.get(),
                     'showmap': self.tkv_showmap.get()}
         save_settings = gui_logging.var_logging( self.__modules )
+
+        # Create the file if it does not exist
         with open( self.savename, 'wb' ) as handle:
-            pickle.dump( save_settings, handle, protocol=pickle.HIGHEST_PROTOCOL )
+                pickle.dump( save_settings, handle, protocol=pickle.HIGHEST_PROTOCOL )
         self.destroy()
 
     def preload(self):
