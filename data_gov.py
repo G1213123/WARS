@@ -15,7 +15,13 @@ global cache  # pointer for temp. loading of database
 
 
 class map_gov:
+    '''
+    Creating a Web based map using folium module for logging the assessed area
+    '''
     def __init__(self, **kwargs):
+        '''
+        Define base map with aoi centroid focused
+        '''
         self.__slots__ = ['stops', 'aoi', 'radius', 'savename']
         self.__dict__.update( kwargs )
 
@@ -30,6 +36,9 @@ class map_gov:
             webbrowser.open( self.savename )
 
     def map_stop(self):
+        '''
+        Adding markers for bus stops in the aoi
+        '''
         for key, b_stop in self.stops.iterrows():
             description = folium.Popup( html='<b>#' + str( key ) + '</b><br><font size="4">' + str(
                 b_stop['stop_name'] ) + '</font><br><i> lat=%s lon=%s </i>'
@@ -38,6 +47,9 @@ class map_gov:
                            popup=description, color='#3186cc', fill_color='#3186cc' ).add_to( self.m )
 
     def map_aoi(self):
+        '''
+        Adding area polygon to the map
+        '''
         if isinstance( self.aoi, Polygon ):
             loc_list = list( self.aoi.exterior.coords )
             folium.Polygon( loc_list, popup=str( loc_list ), color='#3186cc', fill_color='#3186cc' ).add_to( self.m )
@@ -48,13 +60,28 @@ class map_gov:
 
 
 def pt_in_polygon(x, y, polygon):
+    '''
+    Check if a point is in a polygon
+    '''
     return polygon.contains( Point( x, y ) )
 
 
 class data_gov:
+    '''
+    A frame work for searching of bus stop data using data.gov.hk as data source
+    For documentation of source data format, see https://static.data.gov.hk/td/pt-headway-en/dataspec/ptheadway_dataspec.pdf
+    Data is pre-cached in a cache folder if it is first time setup for subsequent query
+    Bus Stop Data querying can be in form of field value or location filtering. See read_by_field and
+        read_by_loc respectively
+    Preferred route list querying is presumed to be according to given area. See route_query_polygon
+    '''
     def __init__(self):
+        '''
+        Check first time setup
+        if file not exist, download the file as cache for later operations
+        '''
         self.cache_path = os.path.expanduser( '~/Documents/Python_Scripts/WARS/cache' )
-        self.fields = ['stops', 'stop_times', 'trips', 'routes']
+        self.fields = ['stops', 'stop_times', 'trips', 'routes']  # used data table names
         url = 'https://static.data.gov.hk/td/pt-headway-en/'
         cache = {}
         load_confirm = False
