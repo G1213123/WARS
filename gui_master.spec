@@ -3,7 +3,7 @@
 block_cipher = None
 
 
-a = Analysis(['C:\\Users\\ngwin\\Documents\\Python_Scripts\\WARS\\gui_master.py'],
+a = Analysis(['gui_master.py'],
              pathex=['C:\\Users\\ngwin\\Documents\\Python_Scripts\\WARS'],
              binaries=[],
              datas=[],
