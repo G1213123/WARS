@@ -60,7 +60,7 @@ class SearchGMB:
 class gmb_get_headway:
     def __init__(self, route, dist='n', savename=None, window=None, archive=None, **kwargs):
         # all those keys will be initialized as class attributes
-        allowed_keys = set( ['am1', 'am2', 'pm1', 'pm2'] )
+        allowed_keys = {'am1', 'am2', 'pm1', 'pm2'}
         # initialize all allowed keys to false
         self.__dict__.update( (key, False) for key in allowed_keys )
         # and update the given keys by their given values
@@ -110,34 +110,35 @@ class gmb_get_headway:
                 element = soup.find( text="Timetable" )
                 result = element.parent.parent.parent.parent.parent.parent.next_sibling
                 rows = result.find_all( 'tr' )[1:]
-            data = []
 
-            for row in rows:  # row = rows[2]
-                cols = row.find_all( 'td' )
-                childrens = cols[0].findChildren()
-                a = ', '.join( [x.name for x in childrens] ) if len( childrens ) > 0 else ''
-                print( a )
-                cols = [ele.text.strip() for ele in cols]
-                cols.append( a )
-                data.append( cols )
+                data = []
 
-            columns = data[0]
-            self.timetable = pd.DataFrame( data[1:], columns=columns )
-            circular = 0
-            if '' == self.timetable.columns[1]:
-                circular = 1
-            elif 'Circular' in self.info:
-                circular = 1
+                for row in rows:  # row = rows[2]
+                    cols = row.find_all( 'td' )
+                    childrens = cols[0].findChildren()
+                    a = ', '.join( [x.name for x in childrens] ) if len( childrens ) > 0 else ''
+                    print( a )
+                    cols = [ele.text.strip() for ele in cols]
+                    cols.append( a )
+                    data.append( cols )
 
-            for bound in range( 2 - circular ):
-                if bound == 0:
-                    self.html_parse( bound )
-                else:
-                    self.html_parse( 1 )
+                    columns = data[0]
+                    self.timetable = pd.DataFrame( data[1:], columns=columns )
+                    circular = 0
+                    if '' == self.timetable.columns[1]:
+                        circular = 1
+                    elif 'Circular' in self.info:
+                        circular = 1
 
-            if self.window is not None:
-                self.window.progress['value'] += 1
-                self.window.update()
+                    for bound in range( 2 - circular ):
+                        if bound == 0:
+                            self.html_parse( bound )
+                        else:
+                            self.html_parse( 1 )
+
+                    if self.window is not None:
+                        self.window.progress['value'] += 1
+                        self.window.update()
         self.PT.to_excel( savename )
 
 

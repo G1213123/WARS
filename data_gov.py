@@ -1,16 +1,15 @@
+import os
+import webbrowser
+from io import StringIO
 from tkinter.filedialog import asksaveasfilename
+from tkinter.messagebox import askyesno, showwarning
 
+import folium
+import geopy.distance
 import pandas as pd
 import requests
-from io import StringIO
-import os
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
-import folium
-import geopandas as gpd
-import webbrowser
-import pyproj
-import geopy.distance
 
 global cache  # pointer for temp. loading of database
 
@@ -58,15 +57,22 @@ class data_gov:
         self.fields = ['stops', 'stop_times', 'trips', 'routes']
         url = 'https://static.data.gov.hk/td/pt-headway-en/'
         cache = {}
+        load_confirm = False
 
         if not os.path.exists( self.cache_path ):
             os.makedirs( self.cache_path )
 
         for f in self.fields:
             if not os.path.exists( self.d_path( f ) ):
-                g = requests.get( url + f + '.txt' ).content
-                cache[f] = pd.read_csv( StringIO( g.decode( 'utf-8' ) ) )
-                cache[f].to_csv( self.d_path( f ) )
+                if not load_confirm:
+                    load_confirm = askyesno( 'loading gov data',
+                                             'data.gov.hk headway data not found. Download the data?' )
+                    if load_confirm:
+                        g = requests.get( url + f + '.txt' ).content
+                        cache[f] = pd.read_csv( StringIO( g.decode( 'utf-8' ) ) )
+                        cache[f].to_csv( self.d_path( f ) )
+                    else:
+                        showwarning( 'Warning', 'Please select eTransport' )
 
     def d_path(self, f):
         return os.path.join( self.cache_path, f + '.csv' )
