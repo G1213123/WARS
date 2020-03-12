@@ -7,7 +7,6 @@ Created on Jan 1, 2020
 import math
 import os
 import pickle
-import sys
 import tkinter
 from tkinter import messagebox
 from tkinter import ttk
@@ -18,12 +17,6 @@ import pandas as pd
 import gui_frame_canvas
 import gui_logging
 
-if getattr( sys, 'frozen', False ):
-    # we are running in a |PyInstaller| bundle
-    basedir = sys._MEIPASS
-else:
-    # we are running in a normal Python environment
-    basedir = os.path.dirname( __file__ )
 
 def treeview_sort_column(tv, col, reverse):
     l = [(tv.set( k, col ), k) for k in tv.get_children()]
