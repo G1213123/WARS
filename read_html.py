@@ -110,7 +110,7 @@ def main(x, y, savename='', show = False):
                                      filetypes=(("comma seperated values", "*.csv"), ("all files", "*.*")))
     routes.to_csv(savename)
 
-    m = folium.Map( location=[x, y], zoom_start=20, tiles='OpenStreetMap',
+    m = folium.Map( location=[x, y], zoom_start=20, tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     attr="<a href=https://github.com/G1213123/WARS>WARS</a>" )
     folium.Circle([x, y], radius=radius, popup=str(radius) + 'm lat=%s lon=%s' % (x, y), color='#3186cc',
                   fill_color='#3186cc').add_to(m)
