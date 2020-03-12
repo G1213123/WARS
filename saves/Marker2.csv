@@ -1,0 +1,91 @@
+,Service Provider,Route,Origin,Destination
+0,KMB,3C,TSZ WAN SHAN (NORTH),CHINA FERRY TERMINAL
+1,KMB,3C,CHINA FERRY TERMINAL,TSZ WAN SHAN (NORTH)
+2,KMB,7,LOK FU,STAR FERRY
+3,KMB,7,STAR FERRY,LOK FU
+4,CTB,22,Kowloon Tong (Festival Walk),Kai Tak Cruise Terminal
+5,CTB,22,Kai Tak Cruise Terminal,Kowloon Tong (Festival Walk)
+6,KMB,72X,TAI PO CENTRAL,MONG KOK (PARK AVENUE)
+7,KMB,72X,MONG KOK (PARK AVENUE),TAI PO CENTRAL
+8,KMB,80M,KOWLOON TONG (SUFFOLK ROAD),SUI WO COURT
+9,KMB,81C,YIU ON,TSIM SHA TSUI EAST (MODY ROAD)
+10,KMB,81C,TSIM SHA TSUI EAST (MODY ROAD),YIU ON
+11,KMB,81S,MEI TIN ESTATE,NATHAN ROAD (PUBLIC SQUARE STREET)
+12,KMB,87D,KAM YING COURT,HUNG HOM STATION
+13,KMB,87D,HUNG HOM STATION,KAM YING COURT
+14,KMB,87D,KAM YING COURT,HUNG HOM STATION (NOT VIA MA ON SHAN TOWN CENTRE A
+15,KMB,87D,KAM YING COURT,HUNG HOM STATION (ONLY OMIT MA ON SHAN)
+16,KMB,87D,MA ON SHAN TOWN CENTRE,HUNG HOM STATION
+17,KMB,87E,NAI CHUNG,TSIM SHA TSUI (MIDDLE ROAD)
+18,KMB/CTB,103,Chuk Yuen Estate,Pokfield Road
+19,KMB/CTB,103,Pokfield Road,Chuk Yuen Estate
+20,KMB/CTB,170,Sha Tin Station,Wah Fu (Central)
+21,KMB/CTB,170,Wah Fu (Central),Sha Tin Station
+22,KMB/CTB,170,Sha Tin Station,Wah Fu (Central)(via Ocean Park)
+23,KMB/CTB,170,Wah Fu (Central)(via Ocean Park),Sha Tin Station
+24,KMB/CTB,182,Yu Chui Court,Central (Macau Ferry)
+25,KMB/CTB,182,Central (Macau Ferry),Yu Chui Court
+26,KMB,203C,TSIM SHA TSUI EAST (MODY ROAD),SHAM SHUI PO (TAI HANG TUNG)
+27,KMB,203C,SHAM SHUI PO (TAI HANG TUNG),TSIM SHA TSUI EAST (MODY ROAD)
+28,KMB,203C,TSIM SHA TSUI EAST (MODY ROAD),SHAM SHUI PO (TAI HANG TUNG)
+29,KMB,203S,CHAK ON ESTATE,TSIM SHA TSUI EAST (MODY ROAD)
+30,KMB,208,TSIM SHA TSUI EAST,BROADCAST DRIVE
+31,KMB,208,BROADCAST DRIVE,TSIM SHA TSUI EAST
+32,KMB,270A,SHEUNG SHUI,TSIM SHA TSUI EAST (MODY ROAD)
+33,KMB,270A,TSIM SHA TSUI EAST (MODY ROAD),SHEUNG SHUI
+34,KMB,270C,LUEN WO HUI BUS TERMINUS,TSIM SHA TSUI EAST (MODY ROAD)
+35,KMB,271,FU HENG B/T,JORDAN (WEST KOWLOON STATION) BUS TERMINUS
+36,KMB,271,JORDAN (WEST KOWLOON STATION) BUS TERMINUS,FU HENG B/T
+37,KMB,271,JORDAN (WEST KOWLOON STATION) BUS TERMINUS,FU HENG
+38,KMB,271,TSIM SHA TSUI (MIDDLE ROAD),FU HENG
+39,KMB,271,TSIM SHA TSUI (MIDDLE ROAD),FU HENG
+40,KMB,271B,FU HENG,TSIM SHA TSUI (MIDDLE ROAD)
+41,KMB,271B,TSIM SHA TSUI (MIDDLE ROAD),FU HENG
+42,KMB,271P,KAU LUNG HANG,TSIM SHA TSUI (CANTON ROAD)
+43,KMB,281A,KWONG YUEN,KOWLOON STATION
+44,KMB,281A,KOWLOON STATION,KWONG YUEN
+45,KMB,281B,SHEK MUN ESTATE,TSIM SHA TSUI EAST (MODY ROAD)
+46,KMB,281M,KOWLOON TONG (SUFFOLK ROAD),SUN TIN WAI
+47,KMB,281X,YIU ON,TSIM SHA TSUI EAST (MODY ROAD)
+48,NWFB,702,Hoi Lai Estate,Yau Yat Tsuen
+49,NWFB,702,Hoi Lai Estate,Yau Yat Tsuen (Circular)
+50,KMB/CTB,N170,Sha Tin Central (New Town Plaza),Wah Fu (Central)
+51,KMB/CTB,N170,Wah Fu (Central),Sha Tin Central (New Town Plaza)
+52,KMB/CTB,N182,Kwong Yuen,Central (Macau Ferry)
+53,KMB/CTB,N182,Central (Macau Ferry),Kwong Yuen
+54,KMB,N271,FU HENG,HUNG HOM STATION
+55,KMB,N271,HUNG HOM STATION,FU HENG
+56,KMB,N281,KAM YING COURT,HUNG HOM STATION
+57,KMB,N281,HUNG HOM STATION,KAM YING COURT
+58,KMB,N373,FANLING (LUEN WO HUI),CENTRAL (MACAU FERRY)
+59,KMB,N373,CENTRAL (MACAU FERRY),FANLING (LUEN WO HUI)
+60,GMB,2,Hung Hom (Whampoa Garden),Tat Chee Avenue (Public Transport Interchange)
+61,GMB,2,Tat Chee Avenue (Public Transport Interchange),Hung Hom (Whampoa Garden)
+62,GMB,2A,Tat Chee Avenue (Public Transport Interchange),Hung Hom (Whampoa Garden)
+63,GMB,2A,Hung Hom (Whampoa Garden),Tat Chee Avenue (Public Transport Interchange)
+64,GMB,25A,Kowloon Tong (Suffolk Road) Public Transport Inter,Tung Tau Estate (Tung Lung Road)
+65,GMB,25B,KOWLOON TONG (SUFFOLK ROAD) PUBLIC TRANSPORT INTER,SAN PO KONG(THE LATITUDE)
+66,GMB,25M,Kowloon Tong (Suffolk Road) Public Transport Inter,La Salle Road
+67,GMB,25M,Kowloon Tong (Suffolk Road) Public Transport Inter,Tung Tau Estate (Tung Lung Road)
+68,GMB,25M,Tung Tau Estate (Tung Lung Road),Kowloon Tong (Suffolk Road) Public Transport Inter
+69,GMB,25M(S),Kowloon Tong (Suffolk Road) Public Transport Inter,Hong Kong Baptist University (Circular)
+70,GMB,29A,Kowloon Tong (Suffolk Road) Public Transport Inter,Broadcast Drive(Circular)
+71,GMB,29B,Kowloon Tong (Suffolk Road) Public Transport Inter,Beacon Hill (Circular)
+72,GMB,41A,Yau Yat Tsuen,Shek Kip Mei Station (Circular)
+73,GMB,41M,Yau Yat Tsuen,Shek Kip Mei Station (Circular)
+74,GMB,61M,Kowloon Tong (Suffolk Road) Public Transport Inter,Worldwide Garden
+75,GMB,72,Festival Walk Public Transport Terminus,Grand View Garden
+76,GMB,73,Festival Walk Public Transport Terminus,Tsz Wan Shan Centre (Circular)
+77,GMB,616S,Mong Kok,Lok Ma Chau Control Point
+78,GMB,616S,Lok Ma Chau Control Point,Mong Kok
+79,MTR,,Kowloon Tong Station - A1,Kowloon Tong Station - A1
+80,MTR,,Kowloon Tong Station - A2,Kowloon Tong Station - A2
+81,MTR,,Kowloon Tong Station - B,Kowloon Tong Station - B
+82,MTR,,Kowloon Tong Station - C1,Kowloon Tong Station - C1
+83,MTR,,Kowloon Tong Station - C2,Kowloon Tong Station - C2
+84,MTR,,Kowloon Tong Station - D,Kowloon Tong Station - D
+85,MTR,,Kowloon Tong Station - E,Kowloon Tong Station - E
+86,MTR,,Kowloon Tong Station - F,Kowloon Tong Station - F
+87,MTR,,Kowloon Tong Station - G1,Kowloon Tong Station - G1
+88,MTR,,Kowloon Tong Station - G2,Kowloon Tong Station - G2
+89,MTR,,Kowloon Tong Station - H,Kowloon Tong Station - H
