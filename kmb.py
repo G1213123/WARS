@@ -12,7 +12,7 @@ import geopandas
 import numpy as np
 from shapely.geometry import Point
 import general as gn
-
+from pyproj import _datadir, datadir
 
 # %%
 
