@@ -186,26 +186,26 @@ def main(route=None, **kwargs):
                                     for time in row[bound_txt].split(', '):  # time = row[bound_txt].split(', ')[0]
                                         test_time = datetime.datetime.strptime(time, '%H:%M').time()
                                         if gn.time_in_period(test_time,
-                                                             test_time):  # or time_in_pm(row['StartTime'],row['EndTime']):
+                                                             test_time, am1, am2):  # or time_in_pm(row['StartTime'],row['EndTime']):
                                             freq1 += 1
                                             min_headway1 += time
                                             min_headway1 += ' '
                                             PT.iloc[-1]['period_am'] = time
                                         if gn.time_in_period(test_time,
-                                                             test_time):  # or time_in_pm(row['StartTime'],row['EndTime']):
+                                                             test_time, pm1, pm2):  # or time_in_pm(row['StartTime'],row['EndTime']):
                                             freq2 += 1
                                             min_headway2 += time
                                             min_headway2 += ' '
                                             PT.iloc[-1]['period_pm'] = time
 
                                 if gn.time_in_period(datetime.datetime.strptime(row[bound_txt], '%H:%M').time(),
-                                                     row['EndTime']):  # or time_in_pm(row['StartTime'],row['EndTime']):
+                                                     row['EndTime'], am1, am2):  # or time_in_pm(row['StartTime'],row['EndTime']):
                                     freq1 += 1
                                     min_headway1 += row[bound_txt]
                                     min_headway1 += ' '
                                     PT.iloc[-1]['period_am'] = row[bound_txt].strip('*').strip('^')
                                 if gn.time_in_period(row['StartTime'],
-                                                     row['EndTime']):  # or time_in_pm(row['StartTime'],row['EndTime']):
+                                                     row['EndTime'], pm1, pm2):  # or time_in_pm(row['StartTime'],row['EndTime']):
                                     freq2 += 1
                                     min_headway2 += row[bound_txt]
                                     min_headway2 += ' '
@@ -250,4 +250,4 @@ def main(route=None, **kwargs):
 
 
 if __name__ == '__main__':
-    main(['80m'], savename='debug.csv')
+    main(['5c'], savename='debug.xlsx')
