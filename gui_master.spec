@@ -1,12 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import sys
+
+sys.setrecursionlimit(5000)
+
 block_cipher = None
 
 
-a = Analysis(['gui_master.py'],
-             pathex=['C:\\Users\\ngwin\\Documents\\Python_Scripts\\WARS'],
-             binaries=[],
-             datas=[],
+
+a = Analysis(['C:\\Users\\ngwin\\Documents\\Python_Scripts\\WARS\\gui_master.py'],
+             pathex=['C:\\Users\\ngwin\\Documents\\exe'],
+             datas=[("C:\\Users\\ngwin\\pyinstall-env\\Lib\\site-packages\\branca\\*.json","branca"),
+			 ("C:\\Users\\ngwin\\pyinstall-env\\Lib\\site-packages\\branca\\templates\\color_scale.js","."),
+			 ("C:\\Users\\ngwin\\pyinstall-env\\Lib\\site-packages\\folium\\templates","templates"),],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
