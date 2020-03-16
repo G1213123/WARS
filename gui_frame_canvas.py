@@ -253,7 +253,7 @@ class frame_canvas( tkinter.Frame ):
         self.reload()
 
     def to_read_html(self, event=None):
-        popup = gui_popups.SaveSetting( self.save_cfg['dirname'] )
+        popup = gui_popups.SaveSetting()
         if len( popup.out ) > 0:
             self.save_cfg = popup.out
             print( self.save_cfg )

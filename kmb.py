@@ -8,11 +8,11 @@ import pandas as pd
 import json, urllib.request
 import datetime
 import re
-import geopandas
+
 import numpy as np
-from shapely.geometry import Point
+
 import general as gn
-from pyproj import _datadir, datadir
+
 
 # %%
 
@@ -34,34 +34,6 @@ def split_period(row, bound_txt):
     except ValueError:
         row['EndTime'] = datetime.time(0, 0, 0)
     return row
-
-
-# %%
-class Kmb_Route():
-    def __init__(self, route, bound):
-        self.route = route
-        self.bound = bound
-
-    def fetch_kmb_route(self):
-        url = r'http://search.kmb.hk/KMBWebSite/Function/FunctionRequest.ashx?action=getstops&route=%s&bound=%s&serviceType=1' % (
-            self.route, self.bound)
-        test_gps = pd.read_json(url)
-        test_gps = test_gps['data']['route']
-        test_gps['lineGeometry'] = test_gps['lineGeometry'].replace("{paths:", "")
-        test_gps['lineGeometry'] = test_gps['lineGeometry'][:-1]
-        paths = pd.read_json(test_gps['lineGeometry'])
-        test2 = paths.to_numpy().flatten()
-        test2 = test2[test2 != np.array(None)]
-        paths = pd.DataFrame(test2, columns=['point'])
-        paths['geometry'] = paths.apply(lambda row: Point(row.point), axis=1)
-        paths = geopandas.GeoDataFrame(paths['geometry'], geometry='geometry')
-        paths.crs = {'init': 'epsg:2326'}
-        gps = paths.to_crs({'init': 'epsg:4326'})
-        return gps
-
-
-# Kmb_Route('277x',1).fetch_kmb_route()
-# %%
 
 # if __name__ == '__main__':
 
