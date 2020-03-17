@@ -4,16 +4,13 @@ Created on Jan 1, 2020
 @author: Andrew.WF.Ng
 '''
 
-import math
 import os
-import pandas as pd
 import pickle
 import tkinter
 from tkinter import messagebox
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename, askdirectory
 
-import general
 import gui_frame_canvas
 import gui_logging
 from gui_headway import get_headway
@@ -21,7 +18,26 @@ from gui_routes import displayroutes
 
 
 class MainWindow( tkinter.Toplevel ):
+    """
+    Mainwindow container for display of file menu and tabs.
+    Currently includes 4 tabs:
+        Tab 1: Log
+            --  For debuging usage. Displaying specify type of vatiables in remaining tab for their operation.
+                Text structure please see pickle binary highest protocol
+            Corresponding import: gui_logging
+        Tab 2: Map
+            --  Map interface for specifying the area of interest to scrap public transport routes.
+            Corresponding import: gui_frame_canvas
+        Tab 3: Routes
+            --  A table for listing searched routes in the area
+            Corresponding import: gui_routes
+        Tab 4: Headway
+            --  A table for displaying the headway data of the selected routes in Tab 3
+            Corresponding import: gui_headway
 
+    Local functions are for file menus and tabs operations.
+    a
+    """
     def savework(self):
 
         tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
@@ -115,7 +131,7 @@ class MainWindow( tkinter.Toplevel ):
         self.tab_parent.add( self.log, text="log" )
         self.tab_parent.add( self.frame_map, text="Map" )
         self.tab_parent.add( self.route, text="Route" )
-        self.tab_parent.add( self.headway, text="headway" )
+        self.tab_parent.add( self.headway, text="Headway" )
 
         self.tab_parent.select( 1 )
         self.tab_parent.pack( expand=True, fill=tkinter.BOTH )
