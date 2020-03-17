@@ -1,12 +1,11 @@
 import base64
 import math
 import os
+import requests
 import tkinter
 import urllib.parse
-from tkinter import messagebox
-
-import requests
 from shapely.geometry import Point, Polygon
+from tkinter import messagebox
 
 import combine_routes
 import data_gov
@@ -343,7 +342,7 @@ class frame_canvas( tkinter.Frame ):
 
     def __init__(self, window, notebook):
         tkinter.Frame.__init__( self, notebook, width=window.width + 100, height=window.height + 50,
-                                bg='salmon3' )
+                                bg='#2ea8ce' )
         self.name = 'frame_canvas'
         self.window = window
         self.zoom = 12
