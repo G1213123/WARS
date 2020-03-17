@@ -4,12 +4,12 @@ Created on Mon Sep  9 10:00:12 2019
 
 @author: Andrew.WF.Ng
 """
-import pandas as pd
-import json, urllib.request
 import datetime
-import re
-
+import json
 import numpy as np
+import pandas as pd
+import re
+import urllib.request
 
 import general as gn
 
@@ -34,9 +34,6 @@ def split_period(row, bound_txt):
     except ValueError:
         row['EndTime'] = datetime.time(0, 0, 0)
     return row
-
-# if __name__ == '__main__':
-
 
 def main(route=None, **kwargs):
     am1 = kwargs.get('am1', 7)
@@ -176,8 +173,9 @@ def main(route=None, **kwargs):
                                     min_headway1 += row[bound_txt]
                                     min_headway1 += ' '
                                     PT.iloc[-1]['period_am'] = row[bound_txt].strip('*').strip('^')
-                                if gn.time_in_period(row['StartTime'],
-                                                     row['EndTime'], pm1, pm2):  # or time_in_pm(row['StartTime'],row['EndTime']):
+                                if gn.time_in_period( row['StartTime'],
+                                                      row['EndTime'], pm1,
+                                                      pm2 ):  # or time_in_pm(row['StartTime'],row['EndTime']):
                                     freq2 += 1
                                     min_headway2 += row[bound_txt]
                                     min_headway2 += ' '
