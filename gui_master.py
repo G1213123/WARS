@@ -69,6 +69,8 @@ class MainWindow( tkinter.Toplevel ):
             # self.frame_map.canvas.scan_dragto(self.frame_map.centerX, self.frame_map.centerY)
             self.frame_map.reload( mousex=self.frame_map.centerX, mousey=self.frame_map.centerY )
             self.frame_map.web_list_handler( load=True )
+            self.route.update_list( self.frame_map.saves )
+            self.route.read_csv( None )
 
     def gmb_archive(self):
         import td_fetch_gmb
