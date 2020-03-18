@@ -1,8 +1,9 @@
 import math
 import os
-import pandas as pd
 import tkinter
 from tkinter import ttk
+
+import pandas as pd
 
 import general
 
@@ -27,10 +28,12 @@ class displayroutes( tkinter.Frame ):
                                         command=lambda value=string: self.read_csv( value ) )
 
     def read_csv(self, name):
-        self.variable.set( name )
+        if name is not None:
+            self.routes_file = name
+        self.variable.set( self.routes_file )
         self.bus_treeview.delete( *self.bus_treeview.get_children() )
         try:
-            self.reader = pd.read_csv( name, delimiter=',' )
+            self.reader = pd.read_csv( self.routes_file, delimiter=',' )
             self.reader = self.reader.fillna( '' )
             for SP in self.reader['Service Provider'].unique():
                 self.bus_treeview.insert( "", 'end', SP, values=(SP, '', '', '') )
@@ -57,6 +60,7 @@ class displayroutes( tkinter.Frame ):
         self.window = MainWindow
         self.name = 'displayroute'
 
+        self.routes_file = ""
         self.variable = tkinter.StringVar( self )
         self.variable.set( "Choose File" )
 
