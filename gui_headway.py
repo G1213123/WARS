@@ -3,6 +3,8 @@ import pickle
 import tkinter
 from tkinter import ttk, messagebox
 
+import pandas as pd
+
 from gui_routes import treeview_sort_column
 
 
@@ -57,6 +59,8 @@ class get_headway( tkinter.Frame ):
         k.pack( side='left' )
         l = tkinter.Entry( self.input_panelB, width=20, textvariable=self.pm2 )
         l.pack( side='left' )
+        m = tkinter.Button( self.input_panelB, text='24hrs', command=self.all_day_breakfast )
+        m.pack( side='left' )
 
         self.variable2 = tkinter.StringVar( self, value='Select District' )
 
@@ -102,13 +106,15 @@ class get_headway( tkinter.Frame ):
         savename = os.path.join( self.window.frame_map.saves['dirname'],
                                  SP + '-' + self.am1.get() + '-' + self.pm1.get() + '.xlsx' )
         self.window.progress.config( maximum=len( routeSP ) + extra_loading, value=0 )
-        getattr( self, SP )( routeSP, savename, self.window )
+        headway_data = getattr( self, SP )( routeSP, savename, self.window )
+        return headway_data
 
     def kmb(self, routeSP, savename, progress):
         import kmb
         kmb_headway = kmb.main( routeSP, am1=self.am1.get(), am2=self.am2.get(), pm1=self.pm1.get(), pm2=self.pm2.get(),
                                 savename=savename, window=progress )
         self.write_headway( kmb_headway )
+        return kmb_headway
 
     def gmb(self, routeSP, savename, progress):
         if self.archive == '':
@@ -121,12 +127,14 @@ class get_headway( tkinter.Frame ):
                                                       pm2=self.pm2.get(), savename=savename, window=progress,
                                                       archive=self.archive )
             self.write_headway( gmb_headway.PT )
+            return gmb_headway.PT
 
     def ctb(self, routeSP, savename, progress):
         import ctb
         ctb_headway = ctb.main( routeSP, am1=self.am1.get(), am2=self.am2.get(), pm1=self.pm1.get(), pm2=self.pm2.get(),
                                 savename=savename, window=progress )
         self.write_headway( ctb_headway )
+        return ctb_headway
 
     def write_headway(self, headway):
         self.bus_treeview.delete( *self.bus_treeview.get_children() )
@@ -142,3 +150,34 @@ class get_headway( tkinter.Frame ):
             self.bus_treeview.insert( '', 'end',
                                       values=(id, route, info, headway_am, headway_pm, bound, period_am, period_pm) )
             self.window.progress.config( value=0 )
+
+    def all_day_breakfast(self):
+        """
+        Iterate the go_bus_web headway fetching operation for 24 hrs to get the daily variation
+        Iteration beginned from 0am and stepping with 2 1-hour period
+            (i.e. Iter 1: 0am-1am and 1am-2am,
+                    Iter 2: 2am-3am and 3am-4am
+                        ...
+                        )
+        Subsequently combines all 2-hours periods to an all-day table
+        :return:
+        """
+        all_day_headway = pd.DataFrame( columns=['route', 'info', 'bound'] )
+        for hr in range( 0, 23, 2 ):
+            print( hr )
+            self.am1.set( hr )
+            self.am2.set( hr + 1 )
+            self.pm1.set( hr + 1 )
+            self.pm2.set( hr + 2 )
+            period_headway = self.go_bus_web()
+            period_headway.columns = ['route', 'info', str( hr ).rjust( 2, '0' ), str( hr + 1 ).rjust( 2, '0' ),
+                                      'bound', 'del', 'del2']
+            period_headway = period_headway.iloc[:, :-2]
+            if hr == 0:
+                all_day_headway = pd.merge( all_day_headway, period_headway, how='right' )
+            elif hr < 23:
+                all_day_headway = all_day_headway.join( period_headway.iloc[:, 2:4] )
+
+        savename = os.path.join( self.window.frame_map.saves['dirname'],
+                                 'all_day.xlsx' )
+        all_day_headway.to_excel( savename )
