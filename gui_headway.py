@@ -168,16 +168,16 @@ class get_headway( tkinter.Frame ):
             self.am1.set( hr )
             self.am2.set( hr + 1 )
             self.pm1.set( hr + 1 )
-            self.pm2.set( hr + 2 )
+            self.pm2.set( hr + 2 if hr <22 else 0)
             period_headway = self.go_bus_web()
+            period_headway = period_headway.iloc[:, 0:5]
             period_headway.columns = ['route', 'info', str( hr ).rjust( 2, '0' ), str( hr + 1 ).rjust( 2, '0' ),
-                                      'bound', 'del', 'del2']
-            period_headway = period_headway.iloc[:, :-2]
+                                      'bound']
             if hr == 0:
                 all_day_headway = pd.merge( all_day_headway, period_headway, how='right' )
             elif hr < 23:
                 all_day_headway = all_day_headway.join( period_headway.iloc[:, 2:4] )
 
         savename = os.path.join( self.window.frame_map.saves['dirname'],
-                                 'all_day.xlsx' )
+                                 'all_day' + self.variable1.get().lower().split( '/' )[0] + '.xlsx' )
         all_day_headway.to_excel( savename )
