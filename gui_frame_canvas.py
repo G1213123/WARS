@@ -323,7 +323,7 @@ class frame_canvas( tkinter.Frame ):
             else:
 
                 tkinter.messagebox.showwarning( 'Warning',
-                                                'data.gov.hk dataset supports bus stop only, gmb data is omitted :(' )
+                                                'data.gov.hk dataset supports bus stop only, gmb data is incomplete :(' )
                 self.drawtoolhandler( None, self.aoimode, 'data.gov.hk' )
 
     def drawtoolhandler(self, event=None, btn=None, web=None):
