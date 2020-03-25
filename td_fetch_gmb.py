@@ -7,6 +7,7 @@ Created on Mon Sep 23 15:19:41 2019
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from tkinter.filedialog import askdirectory
 
 
 def fetch_archive(path, window=None):
@@ -25,3 +26,6 @@ def fetch_archive(path, window=None):
         if window is not None:
             window.progress['value'] += 1
             window.update()
+
+if __name__ == "__main__":
+    fetch_archive(askdirectory())

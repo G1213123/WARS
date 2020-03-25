@@ -80,7 +80,7 @@ class MainWindow( tkinter.Toplevel ):
         if save != '':
             self.progress.config( maximum=4000 + 1, value=1 )
             td_fetch_gmb.fetch_archive( save, self )
-        self.headway.archive = save
+        self.headway._archive = save
         directory = os.path.expanduser( '~/Documents/Python_Scripts/WARS/cfg' )
         if not os.path.exists( directory ):
             os.makedirs( directory )

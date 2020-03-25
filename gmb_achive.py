@@ -122,23 +122,23 @@ class gmb_get_headway:
                     cols.append( a )
                     data.append( cols )
 
-                    columns = data[0]
-                    self.timetable = pd.DataFrame( data[1:], columns=columns )
-                    circular = 0
-                    if '' == self.timetable.columns[1]:
-                        circular = 1
-                    elif 'Circular' in self.info:
-                        circular = 1
+                columns = data[0]
+                self.timetable = pd.DataFrame( data[1:], columns=columns )
+                circular = 0
+                if '' == self.timetable.columns[1]:
+                    circular = 1
+                elif 'Circular' in self.info:
+                    circular = 1
 
-                    for bound in range( 2 - circular ):
-                        if bound == 0:
-                            self.html_parse( bound )
-                        else:
-                            self.html_parse( 1 )
+                for bound in range( 2 - circular ):
+                    if bound == 0:
+                        self.html_parse( bound )
+                    else:
+                        self.html_parse( 1 )
 
-                    if self.window is not None:
-                        self.window.progress['value'] += 1
-                        self.window.update()
+                if self.window is not None:
+                    self.window.progress['value'] += 1
+                    self.window.update()
         self.PT.to_excel( savename )
 
 
