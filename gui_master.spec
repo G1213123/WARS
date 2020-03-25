@@ -11,7 +11,7 @@ block_cipher = None
 a = Analysis(['C:\\Users\\Andrew.WF.Ng\\Documents\\Python_Scripts\\WARS\\gui_master.py'],
              pathex=['C:\\Users\\Andrew.WF.Ng\\Documents\\exe'],
              datas=[("C:\\Users\\Andrew.WF.Ng\\AppData\\Local\\Continuum\\anaconda3\\Lib\\site-packages\\branca\\*.json","branca"),
-			 ("C:\\Users\\Andrew.WF.Ng\\AppData\\Local\\Continuum\\anaconda3\\Lib\\site-packages\\branca\\templates\\color_scale.js","."),
+			 ("C:\\Users\\Andrew.WF.Ng\\AppData\\Local\\Continuum\\anaconda3\\Lib\\site-packages\\branca\\templates\\color_scale.js","templates"),
 			 ("C:\\Users\\Andrew.WF.Ng\\AppData\\Local\\Continuum\\anaconda3\\Lib\\site-packages\\folium\\templates","templates"),],
              hiddenimports=[],
              hookspath=[],

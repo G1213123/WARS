@@ -20,9 +20,9 @@ class get_headway( tkinter.Frame ):
         self.savename = os.path.join( directory, 'archive.cfg' )
         try:
             with open( self.savename, 'rb' ) as handle:
-                self.archive = pickle.load( handle )
+                self._archive = pickle.load(handle)
         except:
-            self.archive = ''
+            self._archive = ''
 
         Mode = ['KMB', 'CTB/NWFB', 'GMB']
 
@@ -117,15 +117,15 @@ class get_headway( tkinter.Frame ):
         return kmb_headway
 
     def gmb(self, routeSP, savename, progress):
-        if self.archive == '':
+        if self._archive == '':
             messagebox.showwarning( 'Warning', 'Please create gmb archive through \n "Import > create gmb archive"' )
         else:
             import gmb_achive
-            gmb_headway = gmb_achive.gmb_get_headway( routeSP, dist=self.variable2.get()[:1].lower(),
-                                                      am1=self.am1.get(), am2=self.am2.get(),
-                                                      pm1=self.pm1.get(),
-                                                      pm2=self.pm2.get(), savename=savename, window=progress,
-                                                      archive=self.archive )
+            gmb_headway = gmb_achive.gmb_get_headway(routeSP, dist=self.variable2.get()[:1].lower(),
+                                                     am1=self.am1.get(), am2=self.am2.get(),
+                                                     pm1=self.pm1.get(),
+                                                     pm2=self.pm2.get(), savename=savename, window=progress,
+                                                     archive=self._archive)
             self.write_headway( gmb_headway.PT )
             return gmb_headway.PT
 
