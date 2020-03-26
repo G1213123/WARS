@@ -76,6 +76,7 @@ class gmb_get_headway:
     def html_parse(self, bound):
         self.PT = self.PT.append( pd.Series(), ignore_index=True )
         temp = self.timetable.iloc[:, 0]
+        print(self.j)
         for idx, val in enumerate( temp ):
             if 'Mondays' in val:
                 period = temp[idx + 1]
