@@ -388,6 +388,9 @@ class frame_canvas( tkinter.Frame ):
 
         self.btnD2.pack()
 
+        guide = tkinter.Message(self.frmD, text= 'Right click on the map to add interested area', bg='white')
+        guide.pack()
+
         sep = tkinter.Frame( self.frmD, width=80, height=80, bg='azure' )
         sep.pack()
         self.btnD3 = tkinter.Button( self.frmD, text='Close\nPolygon', command=self.close_polygon )
