@@ -44,14 +44,14 @@ class SaveSetting( tkinter.Toplevel ):
         frm_a = tkinter.Frame( self, width=self.winfo_reqwidth(), height=50 )
         frm_a.pack()
         self.tkv_batch = tkinter.IntVar( value=self.out['batch'] )
-        self.tk_batch_box = tkinter.Checkbutton( frm_a, text='batch save', variable=self.tkv_batch, command=self.com )
+        self.tk_batch_box = tkinter.Checkbutton( frm_a, text='Default incremental Naming', variable=self.tkv_batch, command=self.com )
         self.tk_batch_box.pack()
 
         # consolidate markers checkbox
         frm_b = tkinter.Frame( self, width=self.winfo_reqwidth(), height=50 )
         frm_b.pack()
         self.tkv_consld = tkinter.IntVar( value=self.out['consld'] )
-        tk_consld_box = tkinter.Checkbutton( frm_b, text='consolidate markers', variable=self.tkv_consld )
+        tk_consld_box = tkinter.Checkbutton( frm_b, text='Summarise all markers', variable=self.tkv_consld )
         tk_consld_box.pack()
 
         # show html map check box
