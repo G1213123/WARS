@@ -66,6 +66,8 @@ def time_in_period(x, y, start, end):
     if not isinstance(start, datetime.time):
         start = float_to_time(start)
         end = float_to_time(end)
+    if end == datetime.time(0,0,0):
+        end = datetime.time(23,59,59)
     if y < x:
         x1 = x
         y1 = datetime.time( 23, 59, 59 )
