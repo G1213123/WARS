@@ -44,7 +44,7 @@ class SaveSetting( tkinter.Toplevel ):
         frm_a = tkinter.Frame( self, width=self.winfo_reqwidth(), height=50 )
         frm_a.pack()
         self.tkv_batch = tkinter.IntVar( value=self.out['batch'] )
-        self.tk_batch_box = tkinter.Checkbutton( frm_a, text='Default incremental Naming', variable=self.tkv_batch, command=self.com )
+        self.tk_batch_box = tkinter.Checkbutton( frm_a, text='Auto Files Naming', variable=self.tkv_batch, command=self.com )
         self.tk_batch_box.pack()
 
         # consolidate markers checkbox
