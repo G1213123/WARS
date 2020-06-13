@@ -6,10 +6,10 @@ Created on Mon Sep  9 10:00:12 2019
 """
 import datetime
 import json
-import numpy as np
-import pandas as pd
 import re
 import urllib.request
+
+import pandas as pd
 
 import general as gn
 
@@ -19,7 +19,7 @@ import general as gn
 
 def split_period(row, bound_txt):
     try:
-        row['StartTime'] = re.split(' - |/', row[bound_txt])[0]
+        row['StartTime'] = re.split( ' - |/', row[bound_txt] )[0]
         row['StartTime'] = datetime.datetime.strptime(row['StartTime'], '%H:%M')
         row['StartTime'] = row['StartTime'].time()
     except ValueError:
@@ -137,31 +137,39 @@ def main(route=None, **kwargs):
                             row = split_period(row, bound_txt)
 
                             if row[bound_time] != '':
-                                if gn.time_in_period(row['StartTime'], row['EndTime'], am1,
-                                                     am2):  # or time_in_pm(row['StartTime'],row['EndTime']):
-                                    if int(row['MinTime']) < min1:
-                                        min1 = int(row['MinTime'])
+                                """
+                                handle when a frequency in a fixed time period was given
+                                """
+                                if gn.time_in_period( row['StartTime'], row['EndTime'], am1,
+                                                      am2 ):  # or time_in_pm(row['StartTime'],row['EndTime']):
+                                    if int( row['MinTime'] ) < min1:
+                                        min1 = int( row['MinTime'] )
                                         min_headway1 = row[bound_time]
-                                        PT.iloc[-1]['period_am'] = row[bound_txt].strip('*').strip('^')
-                                if gn.time_in_period(row['StartTime'], row['EndTime'], pm1,
-                                                     pm2):  # or time_in_pm(row['StartTime'],row['EndTime']):
-                                    if int(row['MinTime']) < min2:
-                                        min2 = int(row['MinTime'])
+                                        PT.iloc[-1]['period_am'] = row[bound_txt].strip( '*' ).strip( '^' )
+                                if gn.time_in_period( row['StartTime'], row['EndTime'], pm1,
+                                                      pm2 ):  # or time_in_pm(row['StartTime'],row['EndTime']):
+                                    if int( row['MinTime'] ) < min2:
+                                        min2 = int( row['MinTime'] )
                                         min_headway2 = row[bound_time]
                                         PT.iloc[-1]['period_pm'] = row[bound_txt].strip('*').strip('^')
 
                             elif row[bound_time] == '' and row[bound_txt][:1] != '(' and row[bound_txt] != '':
+                                """
+                                handle when a list of exact departure time was given
+                                """
                                 if ',' in row[bound_txt]:
-                                    for time in row[bound_txt].split(', '):  # time = row[bound_txt].split(', ')[0]
-                                        test_time = datetime.datetime.strptime(time, '%H:%M').time()
-                                        if gn.time_in_period(test_time,
-                                                             test_time, am1, am2):  # or time_in_pm(row['StartTime'],row['EndTime']):
+                                    for time in row[bound_txt].split( ', ' ):  # time = row[bound_txt].split(', ')[0]
+                                        test_time = datetime.datetime.strptime( time, '%H:%M' )
+                                        if gn.time_in_period( test_time.time(),
+                                                              (test_time + datetime.timedelta( minutes=1 )).time(), am1,
+                                                              am2 ):  # or time_in_pm(row['StartTime'],row['EndTime']):
                                             freq1 += 1
                                             min_headway1 += time
                                             min_headway1 += ' '
                                             PT.iloc[-1]['period_am'] = time
-                                        if gn.time_in_period(test_time,
-                                                             test_time, pm1, pm2):  # or time_in_pm(row['StartTime'],row['EndTime']):
+                                        if gn.time_in_period( test_time.time(),
+                                                              (test_time + datetime.timedelta( minutes=1 )).time(), pm1,
+                                                              pm2 ):  # or time_in_pm(row['StartTime'],row['EndTime']):
                                             freq2 += 1
                                             min_headway2 += time
                                             min_headway2 += ' '

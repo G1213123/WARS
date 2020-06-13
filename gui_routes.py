@@ -54,6 +54,10 @@ class displayroutes( tkinter.Frame ):
         self.window.frame_map.saves['dirname'] = os.path.dirname( savename )
         self.window.tab_parent.select( self.window.route )
 
+    def clear(self):
+        self.bus_treeview.delete( *self.bus_treeview.get_children() )
+        self.w['menu'] = self.variable
+
     def __init__(self, MainWindow, notebook):
         tkinter.Frame.__init__( self, notebook, width=MainWindow.width + 100, height=MainWindow.height + 50, bg='cyan' )
 
