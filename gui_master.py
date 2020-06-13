@@ -90,6 +90,7 @@ class MainWindow( tkinter.Toplevel ):
         self.destroy()
 
     def import_routes(self):
+        self.headway.clear()
         self.route.read_route()
 
     def handle_tab_changed(self, event):

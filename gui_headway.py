@@ -151,6 +151,9 @@ class get_headway( tkinter.Frame ):
                                       values=(id, route, info, headway_am, headway_pm, bound, period_am, period_pm) )
             self.window.progress.config( value=0 )
 
+    def clear(self):
+        self.bus_treeview.delete( *self.bus_treeview.get_children() )
+
     def all_day_breakfast(self):
         """
         Iterate the go_bus_web headway fetching operation for 24 hrs to get the daily variation

@@ -1,11 +1,12 @@
 import base64
 import math
 import os
-import requests
 import tkinter
 import urllib.parse
-from shapely.geometry import Point, Polygon
 from tkinter import messagebox
+
+import requests
+from shapely.geometry import Point, Polygon
 
 import combine_routes
 import data_gov
@@ -252,6 +253,9 @@ class frame_canvas( tkinter.Frame ):
         self.reload()
 
     def to_read_html(self, event=None):
+        self.window.route.clear()
+        self.window.headway.clear()
+
         popup = gui_popups.SaveSetting()
         if len( popup.out ) > 0:
             self.save_cfg = popup.out
