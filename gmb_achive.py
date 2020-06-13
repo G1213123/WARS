@@ -97,14 +97,14 @@ class gmb_get_headway:
                     freq1 = 0
                     freq2 = 0
                     for t in temp[1:]:
-                        time = datetime.datetime.strptime( t, '%I:%M %p' )
-                        if gn.time_in_period( time.time(), (time + datetime.timedelta( minutes=1 )).time(), self.am1,
+                        time = datetime.datetime.strptime( t, '%I:%M %p' ).time()
+                        if gn.time_in_period( time, time, self.am1,
                                               self.am2 ):
                             freq1 += 1
                             min_headway1 += t
                             min_headway1 += ' '
                             self.PT.iloc[-1]['period_am'] = time
-                        if gn.time_in_period( time.time(), (time + datetime.timedelta( minutes=1 )).time(), self.pm1,
+                        if gn.time_in_period( time, time, self.pm1,
                                               self.pm2 ):
                             freq2 += 1
                             min_headway2 += t

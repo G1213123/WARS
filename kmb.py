@@ -159,16 +159,16 @@ def main(route=None, **kwargs):
                                 """
                                 if ',' in row[bound_txt]:
                                     for time in row[bound_txt].split( ', ' ):  # time = row[bound_txt].split(', ')[0]
-                                        test_time = datetime.datetime.strptime( time, '%H:%M' )
-                                        if gn.time_in_period( test_time.time(),
-                                                              (test_time + datetime.timedelta( minutes=1 )).time(), am1,
+                                        test_time = datetime.datetime.strptime( time, '%H:%M' ).time()
+                                        if gn.time_in_period( test_time,
+                                                              test_time, am1,
                                                               am2 ):  # or time_in_pm(row['StartTime'],row['EndTime']):
                                             freq1 += 1
                                             min_headway1 += time
                                             min_headway1 += ' '
                                             PT.iloc[-1]['period_am'] = time
-                                        if gn.time_in_period( test_time.time(),
-                                                              (test_time + datetime.timedelta( minutes=1 )).time(), pm1,
+                                        if gn.time_in_period( test_time,
+                                                              test_time, pm1,
                                                               pm2 ):  # or time_in_pm(row['StartTime'],row['EndTime']):
                                             freq2 += 1
                                             min_headway2 += time
