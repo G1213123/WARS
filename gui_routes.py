@@ -56,7 +56,7 @@ class displayroutes( tkinter.Frame ):
 
     def clear(self):
         self.bus_treeview.delete( *self.bus_treeview.get_children() )
-        self.w['menu'] = self.variable
+        self.w['menu'].delete(0, 'end')
 
     def __init__(self, MainWindow, notebook):
         tkinter.Frame.__init__( self, notebook, width=MainWindow.width + 100, height=MainWindow.height + 50, bg='cyan' )
