@@ -257,11 +257,11 @@ class frame_canvas( tkinter.Frame ):
         self.window.headway.clear()
 
         popup = gui_popups.SaveSetting()
+        self.saves['saves'].clear()
         if len( popup.out ) > 0:
             self.save_cfg = popup.out
             print( self.save_cfg )
 
-            self.saves['saves'].clear()
             self.window.progress.config( maximum=len( self.aoi ) + 1, value=1 )
             marker_id = 1
             for marker in self.aoi:
