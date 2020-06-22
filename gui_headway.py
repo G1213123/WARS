@@ -99,6 +99,10 @@ class get_headway( tkinter.Frame ):
                 (route['Service Provider'].str.contains( 'CTB' )) | (route['Service Provider'].str.contains( 'NWFB' ))][
                 'Route']
             extra_loading = 3
+        elif SP == 'kmb':
+            routeSP = route[
+                (route['Service Provider'].str.contains( 'KMB' )) | (route['Service Provider'].str.contains( 'LWB' ))][
+                'Route']
         else:
             routeSP = route[route['Service Provider'].str.contains( SP.upper() )]['Route']
         print(routeSP)
