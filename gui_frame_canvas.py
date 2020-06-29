@@ -262,7 +262,7 @@ class frame_canvas( tkinter.Frame ):
             self.save_cfg = popup.out
             print( self.save_cfg )
 
-            self.window.progress.config( maximum=len( self.aoi ) + 1, value=1 )
+            self.window.progress.config( maximum=(len( self.aoi ) - 1) * 10 + 1, value=1 )
             marker_id = 1
             for marker in self.aoi:
                 savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
@@ -270,8 +270,13 @@ class frame_canvas( tkinter.Frame ):
                 if self.webMode == 'eTransport':
                     if marker.type == 'Circle':
                         self.saves['saves'].append(
-                            read_html.main( *marker.point[0], savename, self.save_cfg['showmap'] ) )
-
+                            read_html.routes_export_circle_mode( *marker.point[0], savename,
+                                                                 self.save_cfg['showmap'] ) )
+                        self.window.progress['value'] += 10
+                    elif marker.type == 'Polygon':
+                        self.saves['saves'].append(
+                            read_html.routes_export_polygon_mode( Polygon( marker.point ), savename,
+                                                                  self.save_cfg['showmap'], self.window ) )
                 elif self.webMode == 'data.gov.hk':
                     if marker.type == 'Polygon':
                         d = 0
@@ -285,8 +290,9 @@ class frame_canvas( tkinter.Frame ):
                     if shape is not None:
                         self.saves['saves'].append(
                             data_gov.data_gov().gui_handler( shape, d, savename, self.save_cfg['showmap'] ) )
+                    self.window.progress['value'] += 10
                 marker_id += 1
-                self.window.progress['value'] += 1
+
                 self.window.update()
 
             self.saves['dirname'] = os.path.dirname( self.saves['saves'][-1] )
@@ -328,11 +334,11 @@ class frame_canvas( tkinter.Frame ):
 
     def drawtoolhandler(self, event=None, btn=None, web=None):
         self.btnD2.config( state="normal" )
-        if web == 'eTransport':
+        """        if web == 'eTransport':
             self.btnD2.config( state="disabled" )
 
         else:
-            self.btnD2.config( state='normal' )
+            self.btnD2.config( state='normal' )"""
         if btn == 'Circle':
             self.btnD2.config( relief=tkinter.RAISED )
             self.btnD.config( relief=tkinter.SUNKEN )
@@ -362,7 +368,7 @@ class frame_canvas( tkinter.Frame ):
 
         self.aoi = [AoiInstance( (0, 0), 'Initiate' )]
         web_name = ['data.gov.hk', 'eTransport']
-        self.aoimode = 'Circle'
+        self.aoimode = 'Polygon'
         self.webMode = web_name[1]
         self.showlbl = False
         self.s = requests.Session()
