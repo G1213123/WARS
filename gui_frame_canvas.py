@@ -5,6 +5,7 @@ import tkinter
 import urllib.parse
 from tkinter import messagebox
 
+import numpy as np
 import requests
 from shapely.geometry import Point, Polygon
 
@@ -15,11 +16,26 @@ import read_html
 
 
 class AoiInstance:
-    def __init__(self, point, type, radius=0):
+    """
+    object of the area enclosed by users (Area of Interest)
+    """
+
+    def __init__(self, point, type, id, radius=0) -> None:
+        """
+        initial set-up of the area
+
+        Args:
+            point (list of (float,float)|(float,float)): a single or a list of vertices (tuple) for a polygon object
+            type (str): ype of the area, can be initiate(at the initiation of the program), 'circle',
+                        'unclosed'(for open edged polygon) or 'polygon'
+            radius (float): non-zero if self.type != 'circle'
+        """
         self.point = []
         self.type = type
         self.radius = radius
+        self.id = id
 
+        # check the point parameter input is a single point (tuple) or a list of points (list of tuple)
         if isinstance( point, tuple ):
             self.point += [point]
         elif isinstance( point, list ):
@@ -28,9 +44,24 @@ class AoiInstance:
             raise TypeError( 'Point must be a tuple of a coordinate' )
 
     def close_polygon(self):
+        """
+        change type from 'Unclosed' to 'Polygon'
+
+        Returns: none
+
+        """
         self.type = 'Polygon'
 
     def add_vertex(self, point):
+        """
+        Add vertices to the 'Unclosed' Polygon
+
+        Args:
+            point ((float,float)): the xy coordinate of the vertex to be added
+
+        Returns: None
+
+        """
         if isinstance( point, tuple ):
             if self.type == 'Unclose':
                 self.point.append( point )
@@ -39,15 +70,30 @@ class AoiInstance:
 
 
 class frame_canvas( tkinter.Frame ):
-    # Frame containing map display, location searching function and enter/clear box for specifying location
-    #   of interest
-    # used in the main window tab of 'map'
+    """
+    Frame containing map display, location searching box and enter/clear box for specifying location of interest.
+    Used in the main window under the tab 'map'
+    """
 
     def FX(self, lat, lng, zoom, centerX, centerY, mouseX, mouseY):
-        # translating a point coordinate on a canvas to latitude and longitude
-        # coordinate of center frame is used as a referencing point
+        """
+        interpolating a point coordinate on a canvas (default 640x640) to latitude and longitude
+        coordinate of center frame is used as a referencing point
+        x, y as delta distance of input point to reference center point
 
-        # x, y as delta distance of input point to reference center point
+        Args:
+            lat (float): lat of the point
+            lng (float): lng of the point
+            zoom (int): the zoom level of the google map, details check Google Map API:
+                        https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
+            centerX (float): x of the center point of the map in canvas coordinate
+            centerY (float): y of the center point of the map in canvas coordinate
+            mouseX (float): x of the mouse click point of the map in canvas coordinate
+            mouseY (float): y of the mouse click point of the map in canvas coordinate
+
+        Returns: mouseLatLng = {'lat':mouseLat,'lng':mouseLng}
+
+        """
         x = mouseX - centerX,
         y = mouseY - centerY,
 
@@ -70,25 +116,39 @@ class frame_canvas( tkinter.Frame ):
         }
         return mouseLatLng
 
-    '''    def rev_FX(self, circlelat, circlelng):
-        # reverse coordinate translate from lat, lng to canvas xy
-        dx = (circlelng - self.lng) * 40000000 * math.cos( (circlelat + self.lat) * math.pi / 360 ) / 360
-        dy = (circlelat - self.lat) * 40000000 / 360
-        scale = 156543.03392 * math.cos( self.lat * math.pi / 180 ) / math.pow( 2, self.zoom )
-        target = {'x': self.centerX + dx / scale, 'y': self.centerY + dy / scale}
-        return target'''
-
     def rev_FX(self, circlelat, circlelng):
+        """
+        reverse interpolate a point coordinate of latitude and longitude to canvas xy coordinate
+        coordinate of center frame is used as a referencing point
+        x, y as delta distance of input point to reference center point
+
+        Args:
+            circlelat (float):
+            circlelng (float):
+
+        Returns: canvas xy coordinate
+
+        """
         dlat = (circlelat - self.maxlat) / (self.minlat - self.maxlat)
         dlng = (circlelng - self.minlng) / (self.maxlng - self.minlng)
         x = self.canvas.canvasx( 0 ) + self.width * dlng
         y = self.canvas.canvasy( 0 ) + self.height * dlat
-        return (x, y)
+        return x, y
 
-    def getaddress(self, lat, lng):
-        # return url address for static map image by either provide lat lng or geocode a location name
-        if (lat is None) and (lng is None):
-            locationnospaces = urllib.parse.quote( self.location )
+    def getaddress(self, lat, lng, location=None):
+        """
+        return url address for static map image by either provide lat lng or geocode a location name (self.location)
+
+        Args:
+            lat (float|None): center point lat for requesting static map
+            lng (float|None): center point lng for requesting static map
+            location (str|None): center location name
+
+        Returns: url address of the static map
+
+        """
+        if (lat is None) and (lng is None) and (location is not None):
+            locationnospaces = urllib.parse.quote( location )
             geocode = "https://maps.googleapis.com/maps/api/geocode/json?address={0}&key={1}" \
                 .format( locationnospaces, self.api )
             r = self.s.get( geocode )
@@ -100,7 +160,12 @@ class frame_canvas( tkinter.Frame ):
         return address
 
     def getmap(self):
-        # return image from an url request
+        """
+        return image from an url request
+
+        Returns: image of tkinter.PhotoImage
+
+        """
         address = self.getaddress( self.lat, self.lng )
         r = self.s.get( address )
         base64data = base64.encodebytes( r.content )
@@ -122,6 +187,14 @@ class frame_canvas( tkinter.Frame ):
             self.canvas.create_line( [(0, i), (w, i)], tag='grid_line' )
 
     def canvasclick(self, event):
+        """
+        handle right click on the canvas map
+        Args:
+            event (tkinter.event): event on the tkinter.canvas
+
+        Returns: None
+
+        """
         x, y = self.canvas.canvasx( event.x ), self.canvas.canvasy( event.y )
         widget = event.widget
         scale = 156543.03392 * math.cos( self.lat * math.pi / 180 ) / math.pow( 2, self.zoom )
@@ -132,15 +205,32 @@ class frame_canvas( tkinter.Frame ):
         self.aoi_append( aoi_point, x, y, scale, widget )
 
     def aoi_append(self, point, canvasx, canvasy, scale, widget):
+        """
+        proceed to append AOI after right clicking on the canvas
+        for circle mode, the click point is regard as the
+        circle center and radius is determined either by the web service (for eTransport) or default 500m (data.gov.hk)
+        for polygon mode, the click point is treated as an vertex and the polygon is free-form by the vertice
+
+        Args:
+            point (dict[str, int]): dictionary of the latlng pair {'lat':lat,'lng':lng}
+            canvasx (float): x of the canvas coordinate
+            canvasy (float): y of the canvas coordinate
+            scale (float): scale of the canvas map
+            widget (tkinter.widget): canvas object to be add point
+
+        Returns: None
+
+        """
         pt = (point['lat'], point['lng'])
 
         if self.aoimode == 'Polygon':
+            # end point of the line
             widget.create_oval( canvasx - 2, canvasy - 2, canvasx + 2, canvasy + 2, width=2, fill='red', outline='red' )
             if self.aoi[-1].type == 'Unclose':
                 widget.create_line( *self.rev_FX( *self.aoi[-1].point[-1] ), canvasx, canvasy )
                 self.aoi[-1].add_vertex( pt )
             else:
-                self.aoi.append( AoiInstance( pt, 'Unclose' ) )
+                self.aoi.append( AoiInstance( pt, 'Unclose', len( self.aoi ) ) )
 
         elif self.aoimode == 'Circle':
             if self.websource.get() == 'eTransport':
@@ -155,14 +245,23 @@ class frame_canvas( tkinter.Frame ):
                                 tags='CircleLabel' )
             if not self.showlbl:
                 self.canvas.delete( 'CircleLabel' )
-            self.aoi.append( AoiInstance( pt, 'Circle', radius ) )
+            self.aoi.append( AoiInstance( pt, 'Circle', len( self.aoi ), radius ) )
 
     def close_polygon(self):
+        """
+        draw connecting line from end point to starting point and call aoi function close_polygon
+
+        Returns: None
+
+        """
         self.canvas.create_line( *self.rev_FX( *self.aoi[-1].point[0] ),
                                  *self.rev_FX( *self.aoi[-1].point[-1] ) )
         self.aoi[-1].close_polygon()
 
     def label_circle(self):
+        """
+        Set label button RAISED/SUNKEN
+        """
         self.showlbl = not self.showlbl
         if self.showlbl:
             self.btnD4.config( relief=tkinter.SUNKEN )
@@ -183,6 +282,17 @@ class frame_canvas( tkinter.Frame ):
         # show_image()  # redraw the image
 
     def reload(self, event=None, mousex=None, mousey=None, ):
+        """
+        Reload the canvas map with all self parameter
+
+        Args:
+            event ():
+            mousex ():
+            mousey ():
+
+        Returns:
+
+        """
         # if no x,y is passed, the map will be reloaded in place
         if mousex is None:
             mousex = self.canvas.canvasx( 320 )
@@ -218,26 +328,37 @@ class frame_canvas( tkinter.Frame ):
                 self.canvas.create_oval( x - size, y - size, x + size, y + size, width=2 )
                 if self.showlbl:
                     self.canvas.create_text( x, y,
-                                             text='lat=%s\nlon=%s\nradius=%s' % (*marker.point[0], marker.radius),
+                                             text='#%s\nlat=%s\nlon=%s\nradius=%s' % (
+                                             marker.id, *marker.point[0], marker.radius),
                                              tags='CircleLabel' )
                 else:
                     self.canvas.delete( 'CircleLabel' )
 
             elif marker.type == 'Polygon' or marker.type == 'Unclose':
-                vetices = marker.point
-                for id, val in enumerate( vetices ):
+                vertices = marker.point
+                for id, val in enumerate( vertices ):
                     x, y = self.rev_FX( *marker.point[id] )
                     self.canvas.create_oval( x - 2, y - 2, x + 2, y + 2, width=2, fill='red', outline='red' )
                     if id == 0 and marker.type == 'Unclose':
                         pass
                     else:
-                        self.canvas.create_line( *self.rev_FX( vetices[id - 1][0], vetices[id - 1][1] ),
-                                                 *self.rev_FX( vetices[id][0], vetices[id][1] ) )
+                        self.canvas.create_line( *self.rev_FX( vertices[id - 1][0], vertices[id - 1][1] ),
+                                                 *self.rev_FX( vertices[id][0], vertices[id][1] ) )
+                if self.showlbl:
+                    centroid = self.rev_FX( *np.mean( vertices, axis=0 ) )
+                    self.canvas.create_text( centroid[0], centroid[1],
+                                             text='#%s' % marker.id,
+                                             tags='CircleLabel' )
+                else:
+                    self.canvas.delete( 'CircleLabel' )
 
         self.canvas.focus_set()
         self.window.update()
 
     def wheel(self, event):
+        """
+        zoom the map with the mouse wheel input
+        """
         if event.num == 4 or event.delta == 120:
             self.zoom = self.zoom + 1
         elif event.num == 5 or event.delta == -120:
@@ -248,16 +369,33 @@ class frame_canvas( tkinter.Frame ):
         # self.window.mainloop()
 
     def search(self, event=None):
+        """
+        center the map the to location searched
+        """
         self.location = self.varB.get()
-        self.getaddress( None, None )
+        self.getaddress( None, None, self.location )
         self.reload()
 
     def to_read_html(self, event=None):
+        """
+        fetch the routes in the AOI from the website selected
+        require function from read_html.py
+
+        Args:
+            event ():
+
+        Returns:
+
+        """
+
+        # reset the previously loaded data
         self.window.route.clear()
         self.window.headway.clear()
-
-        popup = gui_popups.SaveSetting()
         self.saves['saves'].clear()
+
+        # prompt save setting for the processed routes
+        popup = gui_popups.SaveSetting()
+
         if len( popup.out ) > 0:
             self.save_cfg = popup.out
             print( self.save_cfg )
@@ -265,6 +403,8 @@ class frame_canvas( tkinter.Frame ):
             self.window.progress.config( maximum=(len( self.aoi ) - 1) * 10 + 1, value=1 )
             marker_id = 1
             for marker in self.aoi:
+                self.window.cprint( 'retriving routes in ' + marker.type + ' #' + str( marker_id - 1 ) )
+
                 savename = os.path.join( self.save_cfg['dirname'], 'Marker%s.csv' % marker_id ) if self.save_cfg[
                     'batch'] else ''
                 if self.webMode == 'eTransport':
@@ -302,15 +442,30 @@ class frame_canvas( tkinter.Frame ):
             self.window.tab_parent.select( self.window.route )
 
     def back(self, event=None):
+        """
+        Remove last AOI
+        """
         if len( self.aoi ) > 1:
             del self.aoi[-1]
         self.reload()
 
     def clear(self, event=None):
-        self.aoi = [AoiInstance( (0, 0), 'Initiate' )]
+        """
+        Clear all AOI
+        """
+        self.aoi = [AoiInstance( (0, 0), 'Initiate', 0 )]
         self.reload()
 
     def web_list_handler(self, event=None, load=False):
+        """
+        handle changes in the datasource website dropdown list
+
+        Args:
+            load (bool): set the variable to be change, if true display text changes to internal self value, vice versa
+
+        Returns:
+
+        """
         if self.webMode != self.websource.get():
             if load:
                 self.websource.set( self.webMode )
@@ -325,20 +480,23 @@ class frame_canvas( tkinter.Frame ):
                         if msg_box == 'yes':
                             self.clear()
                             self.reload()
-                self.drawtoolhandler( None, 'Circle', 'eTrans' )
+                # self.drawtoolhandler( None, 'Circle', 'eTrans' )
             else:
 
                 tkinter.messagebox.showwarning( 'Warning',
                                                 'data.gov.hk dataset supports bus stop only, gmb data is incomplete :(' )
-                self.drawtoolhandler( None, self.aoimode, 'data.gov.hk' )
+                self.drawtoolhandler( None, self.aoimode )
 
-    def drawtoolhandler(self, event=None, btn=None, web=None):
+    def drawtoolhandler(self, event=None, btn=None):
+        """
+        AOI mode handler, can specify AOI in circles or free-draw polygon
+        Args:
+            btn (str): the aoi button activated
+
+        Returns:
+
+        """
         self.btnD2.config( state="normal" )
-        """        if web == 'eTransport':
-            self.btnD2.config( state="disabled" )
-
-        else:
-            self.btnD2.config( state='normal' )"""
         if btn == 'Circle':
             self.btnD2.config( relief=tkinter.RAISED )
             self.btnD.config( relief=tkinter.SUNKEN )
@@ -351,6 +509,9 @@ class frame_canvas( tkinter.Frame ):
             self.btnD3.config( state="normal" )
 
     def __init__(self, window, notebook):
+        """
+        Layout of the frame canvas map tab
+        """
         tkinter.Frame.__init__( self, notebook, width=window.width + 100, height=window.height + 50,
                                 bg='#2ea8ce' )
         self.name = 'frame_canvas'
@@ -358,15 +519,15 @@ class frame_canvas( tkinter.Frame ):
         self.zoom = 12
         self.location = "Hong Kong"
         self.api = 'AIzaSyB1ahSJjh6TtRwXmLOCTJ6eDY_dchw5v4s'
-        self.lat = None
-        self.lng = None
+        self.lat = 22.305349
+        self.lng = 114.171598
         self.minlat, self.maxlat, self.minlng, self.maxlng = None, None, None, None
         self.width = window.width
         self.height = window.height
         self.centerX = window.width / 2
         self.centerY = window.height / 2
 
-        self.aoi = [AoiInstance( (0, 0), 'Initiate' )]
+        self.aoi = [AoiInstance( (0, 0), 'Initiate', 0 )]
         web_name = ['data.gov.hk', 'eTransport']
         self.aoimode = 'Polygon'
         self.webMode = web_name[1]
@@ -394,19 +555,19 @@ class frame_canvas( tkinter.Frame ):
 
         self.btnD2.pack()
 
-        guide = tkinter.Message(self.frmD, text= 'Right click on the map to add interested area', bg='white')
+        guide = tkinter.Message( self.frmD, text='Right click on the map to add interested area', bg='white' )
         guide.pack()
 
-        sep = tkinter.Frame( self.frmD, width=80, height=80, bg='azure' )
+        sep = tkinter.Frame( self.frmD, width=80, height=60, bg='azure' )
         sep.pack()
         self.btnD3 = tkinter.Button( self.frmD, text='Close\nPolygon', command=self.close_polygon )
         self.btnD3.config( state="disabled" )
-        self.btnD3.pack()
+        self.btnD3.pack( fill='x' )
 
-        self.btnD4 = tkinter.Button( self.frmD, text='Show\nCircle\nDetails', command=self.label_circle )
-        self.btnD4.pack()
+        self.btnD4 = tkinter.Button( self.frmD, text='Show AOI\nDetails', command=self.label_circle )
+        self.btnD4.pack( fill='x' )
 
-        self.drawtoolhandler( btn=self.aoimode, web=self.webMode )
+        self.drawtoolhandler( btn=self.aoimode )
 
         #############################################################
         self.frmA = tkinter.Frame( self, width=250, height=window.height, bg='yellow' )
