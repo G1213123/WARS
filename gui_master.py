@@ -101,6 +101,9 @@ class MainWindow( tkinter.Toplevel ):
         if tab == 'log':
             self.log.log_insert()
 
+    def cprint(self, message):
+        self.status['text'] = message
+
     def __init__(self, parent):
         tkinter.Toplevel.__init__( self, parent )
         self.name = 'Mainwindow'
@@ -175,6 +178,10 @@ class MainWindow( tkinter.Toplevel ):
         self.progress = ttk.Progressbar( bottombar, style="red.Horizontal.TProgressbar", orient=tkinter.HORIZONTAL,
                                          length=300, mode='determinate' )
         self.progress.pack( side='right' )
+
+        self.status = tkinter.Label( bottombar, text='Awaiting Area of Interest', bg='white' )
+
+        self.status.pack( side='left' )
 
         self.frame_map.reload()
 
