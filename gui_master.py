@@ -16,6 +16,7 @@ import gui_logging
 from gui_headway import get_headway
 from gui_routes import displayroutes
 
+from pyproj import _datadir, datadir # for exe packaging
 
 class MainWindow( tkinter.Toplevel ):
     """
