@@ -170,8 +170,11 @@ class gmb_get_headway:
                         self.html_parse( 1 )
 
                 if self.window is not None:
+                    self.window.headway['cursor'] = 'watch'
                     self.window.progress['value'] += 1
+                    self.window.cprint('retriving headway data of route ' + self.j)
                     self.window.update()
+        self.window.headway['cursor'] = 'arrow'
         self.PT.to_excel( savename )
 
 

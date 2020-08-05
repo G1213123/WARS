@@ -212,12 +212,15 @@ def main(route=None, **kwargs):
 
             except:
                 print('error')
-        i = i + 1
+
         # print(i)
         if window is not None:
-            window.progress['value']+=1
+            window.headway['cursor'] = 'watch'
+            window.progress['value'] += 1
+            window.cprint('retriving headway data of route ' + route[i])
             window.update()
-
+        i = i + 1
+    window.headway['cursor'] = 'arrow'
     print(PT)
     print(PT.period_am)
     print(PT.headway_am)

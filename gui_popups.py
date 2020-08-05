@@ -17,16 +17,17 @@ class SaveSetting( tkinter.Toplevel ):
             #               Save path refers to the last marker csv file
             # Show Map: open the saved map for the record the selected AOIs                            """
 
-    def __init__(self, default_save='', **kw):
+    def __init__(self, default_save='', aoi_nos=1, **kw):
         # Configure save popup dialogue
-        super().__init__( **kw )
+        super().__init__(**kw)
         # self = tkinter.Toplevel()
-        self.geometry( "%dx%d%+d%+d" % (300, 200, 250, 125) )
+        self.geometry("%dx%d%+d%+d" % (300, 200, 250, 125))
         self.name = 'save_cfg'
-        self.title( self.name )
+        self.title(self.name)
+        self.aoi_nos = aoi_nos
 
         # create save config file directory
-        directory = os.path.expanduser( '~/Documents/Python_Scripts/WARS/cfg' )
+        directory = os.path.expanduser('~/Documents/Python_Scripts/WARS/cfg')
         if not os.path.exists( directory ):
             os.makedirs( directory )
         self.savename = directory +  r'/save.cfg'
@@ -34,7 +35,7 @@ class SaveSetting( tkinter.Toplevel ):
 
         # load previous settings, if not exist, load default settings
         self.out = {'batch': 1, 'consld': 1, 'dirname': '',
-                    'showmap': 0}
+                    'showmap': 0, 'done': 0}
         try:
             self.preload()
         except FileNotFoundError:
@@ -43,22 +44,25 @@ class SaveSetting( tkinter.Toplevel ):
         # batch save checkbox
         frm_a = tkinter.Frame( self, width=self.winfo_reqwidth(), height=50 )
         frm_a.pack()
-        self.tkv_batch = tkinter.IntVar( value=self.out['batch'] )
-        self.tk_batch_box = tkinter.Checkbutton( frm_a, text='Auto Files Naming', variable=self.tkv_batch, command=self.com )
+        self.tkv_batch = tkinter.IntVar(value=self.out['batch'])
+        self.tk_batch_box = tkinter.Checkbutton(frm_a, text='Auto Files Naming', variable=self.tkv_batch,
+                                                command=self.com)
         self.tk_batch_box.pack()
 
         # consolidate markers checkbox
-        frm_b = tkinter.Frame( self, width=self.winfo_reqwidth(), height=50 )
+        frm_b = tkinter.Frame(self, width=self.winfo_reqwidth(), height=50)
         frm_b.pack()
-        self.tkv_consld = tkinter.IntVar( value=self.out['consld'] )
-        tk_consld_box = tkinter.Checkbutton( frm_b, text='Summarise all markers', variable=self.tkv_consld )
+        self.tkv_consld = tkinter.IntVar(value=self.out['consld'])
+        tk_consld_box = tkinter.Checkbutton(frm_b, text='Summarise all markers', variable=self.tkv_consld)
+        if self.aoi_nos <= 2:
+            tk_consld_box.config(state=tkinter.DISABLED)
         tk_consld_box.pack()
 
         # show html map check box
-        frm_c = tkinter.Frame( self, width=self.winfo_reqwidth(), height=50, bg='green' )
+        frm_c = tkinter.Frame(self, width=self.winfo_reqwidth(), height=50, bg='green')
         frm_c.pack()
-        self.tkv_showmap = tkinter.IntVar( value=self.out['showmap'] )
-        tk_map_box = tkinter.Checkbutton( frm_c, text='show map file', variable=self.tkv_showmap )
+        self.tkv_showmap = tkinter.IntVar(value=self.out['showmap'])
+        tk_map_box = tkinter.Checkbutton(frm_c, text='show map file', variable=self.tkv_showmap)
         tk_map_box.pack()
 
         # Browse folder dialogue button
@@ -66,15 +70,18 @@ class SaveSetting( tkinter.Toplevel ):
         frm_d.pack()
         label = tkinter.Label( frm_d, text="Folder" )
         label.pack()
-        self.tkv_dirname_box = tkinter.StringVar( value=self.out['dirname'] )
-        self.tk_textbox = tkinter.Entry( frm_d, textvariable=self.tkv_dirname_box, width=200, state='normal' )
+        self.tkv_dirname_box = tkinter.StringVar(value=self.out['dirname'])
+        self.tk_textbox = tkinter.Entry(frm_d, textvariable=self.tkv_dirname_box, width=200, state='normal')
         self.tk_textbox.pack()
-        tk_browse = tkinter.Button( frm_d, text='Browse', command=self.browse_button )
+        tk_browse = tkinter.Button(frm_d, text='Browse', command=self.browse_button)
         tk_browse.pack()
 
         # Done button
-        button = tkinter.Button( self, text="Done", command=self.done )
+        button = tkinter.Button(self, text="Done", command=self.done)
         button.pack()
+
+        # Listen done button click
+        self.out['done'] = 0
 
         # Set popup focus and wait
         self.grab_set()
@@ -99,7 +106,7 @@ class SaveSetting( tkinter.Toplevel ):
     def done(self):
         # output settings
         self.out = {'batch': self.tkv_batch.get(), 'consld': self.tkv_consld.get(), 'dirname': self.tk_textbox.get(),
-                    'showmap': self.tkv_showmap.get()}
+                    'showmap': self.tkv_showmap.get(), 'done': 1}
         save_settings = gui_logging.var_logging( self.__modules )
 
         # Create the file if it does not exist

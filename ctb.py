@@ -49,6 +49,7 @@ def main(route=None, **kwargs):
     window = kwargs.get( 'window', None )
 
     if window is not None:
+        window.headway['cursor'] = 'watch'
         window.progress['value'] += 1
         window.update()
 
@@ -157,20 +158,23 @@ def main(route=None, **kwargs):
                             peak_trip_am.append( time_str )
                         if gn.time_in_period( time, time, pm1, pm2 ):
                             peak_trip_pm.append( time_str )
-                    if len( peak_trip_am ) > 0:
-                        PT.iloc[-1]['headway_am'] = ', '.join( peak_trip_am ) + ' ' + str(
-                            len( peak_trip_am ) ) + p.plural( ' trip', len( peak_trip_am ) )
-                    if len( peak_trip_pm ) > 0:
-                        PT.iloc[-1]['headway_pm'] = ', '.join( peak_trip_pm ) + ' ' + str(
-                            len( peak_trip_pm ) ) + p.plural( ' trip', len( peak_trip_pm ) )
+                    if len(peak_trip_am) > 0:
+                        PT.iloc[-1]['headway_am'] = ', '.join(peak_trip_am) + ' ' + str(
+                            len(peak_trip_am)) + p.plural(' trip', len(peak_trip_am))
+                    if len(peak_trip_pm) > 0:
+                        PT.iloc[-1]['headway_pm'] = ', '.join(peak_trip_pm) + ' ' + str(
+                            len(peak_trip_pm)) + p.plural(' trip', len(peak_trip_pm))
         if window is not None:
-            window.progress['value']+=1
+            window.progress['value'] += 1
+            window.cprint('retriving headway data of route ' + i)
             window.update()
-    print( PT )
-    print( PT.headway_am )
-    print( PT.period_am )
+
+    window.headway['cursor'] = 'arrow'
+    print(PT)
+    print(PT.headway_am)
+    print(PT.period_am)
     # %%
-    PT.to_excel( savename )
+    PT.to_excel(savename)
 
     return PT
 
