@@ -394,7 +394,8 @@ class frame_canvas( tkinter.Frame ):
         self.saves['saves'].clear()
 
         # prompt save setting for the processed routes
-        popup = gui_popups.SaveSetting(aoi_nos=len(self.aoi))
+        if len( self.aoi ) > 1:
+            popup = gui_popups.SaveSetting( aoi_nos=len( self.aoi ) )
 
         # check the return from save setting popup
         if popup.out['done'] > 0:
@@ -402,7 +403,7 @@ class frame_canvas( tkinter.Frame ):
             # print( self.save_cfg )
 
             # progress bar setting
-            self.window.progress.config(maximum=(len(self.aoi) - 1) * 10 + 1, value=1)
+            self.window.progress.config( maximum=(len( self.aoi ) - 1) * 10 + 1, value=1 )
             self.window.headway['cursor'] = 'watch'
             marker_id = 1
             for marker in self.aoi:
@@ -416,7 +417,9 @@ class frame_canvas( tkinter.Frame ):
                             read_html.routes_export_circle_mode( *marker.point[0], savename,
                                                                  self.save_cfg['showmap'] ) )
                         self.window.progress['value'] += 10
-                    elif marker.type == 'Polygon':
+                    elif marker.type != 'Initiate':
+                        if marker.type == 'Unclose':
+                            self.close_polygon()
                         self.saves['saves'].append(
                             read_html.routes_export_polygon_mode( Polygon( marker.point ), savename,
                                                                   self.save_cfg['showmap'], self.window ) )
@@ -538,10 +541,10 @@ class frame_canvas( tkinter.Frame ):
         self.showlbl = False
         self.s = requests.Session()
         self.save_cfg = {'batch': True, 'consld': True, 'dirname': '',
-                         'map': False}
+                         'map': False, 'done': 0}
         self.saves = {'saves': [''], 'dirname': None}
 
-        self.frmCanvas = tkinter.Frame(self, width=window.width, height=window.height, bg='green', cursor='hand2')
+        self.frmCanvas = tkinter.Frame( self, width=window.width, height=window.height, bg='green', cursor='tcross' )
         self.frmCanvas.place( relx=.5, anchor="n", y=0, x=-40 )
         #############################################################
         self.frmD = tkinter.Frame( self, width=80, height=50, bg='azure' )

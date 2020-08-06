@@ -4,19 +4,14 @@ Created on Mon Sep 23 08:45:09 2019
 
 @author: Andrew.WF.Ng
 """
-import pandas as pd
-import requests
-import urllib
 import datetime
 
 import inflect
+import pandas as pd
+import requests
 
 p = inflect.engine()
-import webbrowser
 from http.cookies import SimpleCookie
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
-from tkinter.filedialog import asksaveasfilename
 from http.client import IncompleteRead
 import re
 import general as gn
@@ -48,8 +43,9 @@ def main(route=None, **kwargs):
     savename = kwargs.get( 'savename', None )
     window = kwargs.get( 'window', None )
 
-    if window is not None:
+    if window:
         window.headway['cursor'] = 'watch'
+        window.cprint( 'Connecting to CTB web service' )
         window.progress['value'] += 1
         window.update()
 

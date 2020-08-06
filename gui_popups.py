@@ -55,7 +55,8 @@ class SaveSetting( tkinter.Toplevel ):
         self.tkv_consld = tkinter.IntVar(value=self.out['consld'])
         tk_consld_box = tkinter.Checkbutton(frm_b, text='Summarise all markers', variable=self.tkv_consld)
         if self.aoi_nos <= 2:
-            tk_consld_box.config(state=tkinter.DISABLED)
+            tk_consld_box.config( state=tkinter.DISABLED )
+            self.tkv_consld.set( 0 )
         tk_consld_box.pack()
 
         # show html map check box

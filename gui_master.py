@@ -9,20 +9,19 @@ import pickle
 import tkinter
 from tkinter import messagebox
 from tkinter import ttk
-from tkinter.filedialog import askopenfilename, askdirectory
+from tkinter.filedialog import askopenfilename, askdirectory, asksaveasfile
 
 import gui_frame_canvas
 import gui_logging
 from gui_headway import get_headway
 from gui_routes import displayroutes
 
-from pyproj import _datadir, datadir # for exe packaging
-from fiona import _shim, schema
 
 class MainWindow( tkinter.Toplevel ):
     """
-    Mainwindow container for display of file menu and tabs.
-    Currently includes 4 tabs:
+    Mainwindow is the mother window for containing all the widgets.
+    The direct child widgets are the file menu and tabs.
+    Current build includes 4 tabs:
         Tab 1: Log
             --  For debuging usage. Displaying specify type of vatiables in remaining tab for their operation.
                 Text structure please see pickle binary highest protocol
@@ -40,17 +39,34 @@ class MainWindow( tkinter.Toplevel ):
     Local functions are for file menus and tabs operations.
     a
     """
-    def savework(self):
 
-        tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-        path = askdirectory(
-            title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
-        if path != '':
-            savename = os.path.join( path, 'workspace.wsv' )
+    def save_as_work(self, saveas=None):
+        """
+        Save the current working space (including areas, drawing mode, service provider, routes and headway loaded)
+            as standalone file
+
+        Args:
+            saveas (bool): if true ask for save file name else directly save with path previously specified by saveas
+        """
+        ftypes = [('Workspace Save', '.wsv')]
+        if saveas:
+            tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
+            self.path = asksaveasfile( defaultextension='*.wsv', filetypes=ftypes, initialfile='workspace1.wsv',
+                                       title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
+        if self.path:
             PTApp = gui_logging.var_logging( self.__modules )
 
+            with open( self.path, 'wb' ) as handle:
+                pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )
 
-            with open( savename, 'wb' ) as handle:
+    def savework(self):
+        """
+        save workspace directly is save as has been activated before
+        """
+        if self.path:
+            PTApp = gui_logging.var_logging( self.__modules )
+
+            with open( self.path, 'wb' ) as handle:
                 pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )
 
     def loadwork(self):
@@ -114,16 +130,19 @@ class MainWindow( tkinter.Toplevel ):
         self.minsize( self.width + 170, self.height + 100 )
         # self.window.maxsize(self.width + 200, self.height + 100)
 
+        self.path = None
+
         self.filemenu = tkinter.Menu()
         self.config( menu=self.filemenu )
         self.menu1 = tkinter.Menu( self.filemenu, tearoff=0 )
-        self.menu1.add_command( label='save', command=self.savework )
-        self.menu1.add_command( label='load', command=self.loadwork )
+        self.menu1.add_command( label='Save As', command=lambda: self.save_as_work( True ) )
+        self.menu1.add_command( label='Save', command=lambda: self.save_as_work( False ) )
+        self.menu1.add_command( label='Load', command=self.loadwork )
         self.filemenu.add_cascade( label='File', menu=self.menu1 )
 
         self.menu2 = tkinter.Menu( self.filemenu, tearoff=0 )
-        self.menu2.add_command( label='create gmb archive', command=self.gmb_archive )
-        self.menu2.add_command( label='import routes', command=self.import_routes )
+        self.menu2.add_command( label='Create GMB Archive', command=self.gmb_archive )
+        self.menu2.add_command( label='Import Routes', command=self.import_routes )
         self.filemenu.add_cascade( label='Import', menu=self.menu2 )
 
         self.tab_parent = ttk.Notebook( self, width=self.width, height=self.height )

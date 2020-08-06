@@ -38,25 +38,29 @@ def split_period(row, bound_txt):
 def main(route=None, **kwargs):
     am1 = kwargs.get('am1', 7)
     pm1 = kwargs.get('pm1', 17)
-    period = kwargs.get('period', 1)
-    am2 = kwargs.get('am2', None)
-    pm2 = kwargs.get('pm2', None)
+    period = kwargs.get( 'period', 1 )
+    am2 = kwargs.get( 'am2', None )
+    pm2 = kwargs.get( 'pm2', None )
 
-    savename = kwargs.get('savename', None)
+    savename = kwargs.get( 'savename', None )
     window = kwargs.get( 'window', None )
 
     if am2 is None or pm2 is None:
         am2 = am1 + period
         pm2 = pm1 + period
 
-    route, savename = gn.read_route(route, savename)
+    if window:
+        window.cprint( 'Connecting to CTB web service' )
+        window.headway['cursor'] = 'watch'
+
+    route, savename = gn.read_route( route, savename )
 
     # Declare output PT df
     # Iterate by route
     # route=['103']   #Dummy test route
-    PT = pd.DataFrame(columns=['route', 'info', 'headway_am', 'headway_pm', 'bound', 'period_am', 'period_pm'])
+    PT = pd.DataFrame( columns=['route', 'info', 'headway_am', 'headway_pm', 'bound', 'period_am', 'period_pm'] )
     i = 0
-    while i < len(route):
+    while i < len( route ):
         try:
             route[i] = route[i].strip()
             print(route[i])
@@ -215,7 +219,6 @@ def main(route=None, **kwargs):
 
         # print(i)
         if window is not None:
-            window.headway['cursor'] = 'watch'
             window.progress['value'] += 1
             window.cprint('retriving headway data of route ' + route[i])
             window.update()
