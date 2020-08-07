@@ -16,7 +16,9 @@ import gui_logging
 from gui_headway import get_headway
 from gui_routes import displayroutes
 
+# for pyinstaller exe packaging
 from pyproj import _datadir, datadir
+from fiona import _shim, schema
 
 class MainWindow( tkinter.Toplevel ):
     """
