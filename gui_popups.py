@@ -120,4 +120,5 @@ class SaveSetting( tkinter.Toplevel ):
             save_settings = pickle.load( handle )
         for module in self.__modules:
             for key, value in save_settings[module.name].items():
-                setattr( module, key, value )
+                if key != 'aoi_nos':
+                    setattr(module, key, value)
