@@ -23,6 +23,7 @@ def treeview_sort_column(tv, col, reverse):
 class displayroutes( tkinter.Frame ):
 
     def update_list(self, saves):
+        self.saves = saves
         for string in saves['saves']:
             self.w['menu'].add_command( label=string,
                                         command=lambda value=string: self.read_csv( value ) )
@@ -32,20 +33,21 @@ class displayroutes( tkinter.Frame ):
             self.routes_file = name
         self.variable.set( self.routes_file )
         self.bus_treeview.delete( *self.bus_treeview.get_children() )
-        try:
-            self.reader = pd.read_csv( self.routes_file, delimiter=',' )
-            self.reader = self.reader.fillna( '' )
-            for SP in self.reader['Service Provider'].unique():
-                self.bus_treeview.insert( "", 'end', SP, values=(SP, '', '', '') )
-            for index, row in self.reader.iterrows():
-                ServiceProvider = row['Service Provider']
-                Route = row['Route']
-                Origin = row['Origin']
-                Destination = row['Destination']
-                self.bus_treeview.insert( ServiceProvider, 'end',
-                                          values=(ServiceProvider, Route, Origin, Destination) )
-        except TypeError:
-            pass
+        if self.routes_file != '':
+            try:
+                self.reader = pd.read_csv( self.routes_file, delimiter=',' )
+                self.reader = self.reader.fillna( '' )
+                for SP in self.reader['Service Provider'].unique():
+                    self.bus_treeview.insert( "", 'end', SP, values=(SP, '', '', '') )
+                for index, row in self.reader.iterrows():
+                    ServiceProvider = row['Service Provider']
+                    Route = row['Route']
+                    Origin = row['Origin']
+                    Destination = row['Destination']
+                    self.bus_treeview.insert( ServiceProvider, 'end',
+                                              values=(ServiceProvider, Route, Origin, Destination) )
+            except TypeError:
+                pass
 
     def read_route(self):
         savename = general.file_prompt()

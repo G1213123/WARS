@@ -16,9 +16,8 @@ import gui_logging
 from gui_headway import get_headway
 from gui_routes import displayroutes
 
+
 # for pyinstaller exe packaging
-from pyproj import _datadir, datadir
-from fiona import _shim, schema
 
 class MainWindow( tkinter.Toplevel ):
     """
@@ -54,23 +53,17 @@ class MainWindow( tkinter.Toplevel ):
         ftypes = [('Workspace Save', '.wsv')]
         if saveas:
             tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-            self.path = asksaveasfilename(defaultextension='*.wsv', filetypes=ftypes, initialfile='workspace1.wsv',
-                                          title="Select save directory")  # show an "Open" dialog box and return the path to the selected file
+            self.path = asksaveasfilename( defaultextension='*.wsv', filetypes=ftypes, initialfile='workspace1.wsv',
+                                           title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
+            self.menu1.entryconfig( "Save", state=tkinter.NORMAL )
         if self.path:
+            self.cprompt( 0, 'Saving...' )
+            self.update()
             PTApp = gui_logging.var_logging( self.__modules )
 
             with open( self.path, 'wb' ) as handle:
                 pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )
-
-    def savework(self):
-        """
-        save workspace directly is save as has been activated before
-        """
-        if self.path:
-            PTApp = gui_logging.var_logging( self.__modules )
-
-            with open( self.path, 'wb' ) as handle:
-                pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )
+        self.cprompt( 1 )
 
     def loadwork(self):
         MsgBox = 'yes'
@@ -123,6 +116,14 @@ class MainWindow( tkinter.Toplevel ):
     def cprint(self, message):
         self.status['text'] = message
 
+    def cprompt(self, revert, message=''):
+        if revert == 0:
+            self.old_message = self.status['text']
+            self.status['text'] = message
+        else:
+            root.after( 5000 )
+            self.status['text'] = self.old_message
+
     def __init__(self, parent):
         tkinter.Toplevel.__init__( self, parent )
         self.name = 'Mainwindow'
@@ -139,7 +140,7 @@ class MainWindow( tkinter.Toplevel ):
         self.config( menu=self.filemenu )
         self.menu1 = tkinter.Menu( self.filemenu, tearoff=0 )
         self.menu1.add_command( label='Save As', command=lambda: self.save_as_work( True ) )
-        self.menu1.add_command( label='Save', command=lambda: self.save_as_work( False ) )
+        self.menu1.add_command( label='Save', command=lambda: self.save_as_work( False ), state=tkinter.DISABLED )
         self.menu1.add_command( label='Load', command=self.loadwork )
         self.filemenu.add_cascade( label='File', menu=self.menu1 )
 

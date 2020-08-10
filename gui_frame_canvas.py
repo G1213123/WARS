@@ -445,6 +445,7 @@ class frame_canvas( tkinter.Frame ):
             if self.save_cfg['consld']:
                 self.saves['saves'].append( combine_routes.main( self.saves ) )
             self.window.route.update_list( self.saves )
+            self.window.route.read_csv( self.saves['saves'][-1] )
             self.window.headway['cursor'] = 'arrow'
             self.window.tab_parent.select( self.window.route )
 
