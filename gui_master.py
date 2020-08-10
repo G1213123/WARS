@@ -9,7 +9,7 @@ import pickle
 import tkinter
 from tkinter import messagebox
 from tkinter import ttk
-from tkinter.filedialog import askopenfilename, askdirectory, asksaveasfile
+from tkinter.filedialog import askopenfilename, askdirectory, asksaveasfilename
 
 import gui_frame_canvas
 import gui_logging
@@ -54,8 +54,8 @@ class MainWindow( tkinter.Toplevel ):
         ftypes = [('Workspace Save', '.wsv')]
         if saveas:
             tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-            self.path = asksaveasfile( defaultextension='*.wsv', filetypes=ftypes, initialfile='workspace1.wsv',
-                                       title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
+            self.path = asksaveasfilename(defaultextension='*.wsv', filetypes=ftypes, initialfile='workspace1.wsv',
+                                          title="Select save directory")  # show an "Open" dialog box and return the path to the selected file
         if self.path:
             PTApp = gui_logging.var_logging( self.__modules )
 
