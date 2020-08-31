@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from folium.plugins import MarkerCluster
 from matplotlib.patches import RegularPolygon
 from shapely.geometry import Polygon, Point
 
@@ -85,9 +86,10 @@ class map_html:
 
         centroid = self.aoi.centroid
         self.m = folium.Map( location=[centroid.x, centroid.y], zoom_start=20, tiles='OpenStreetMap' )
+        # folium.LayerControl().add_to( self.m )
+        self.marker_cluster = MarkerCluster( maxClusterRadius=40 ).add_to( self.m )
         self.map_stop()
         self.map_aoi()
-
         self.m.save( self.savename )
 
         if True:
@@ -98,11 +100,16 @@ class map_html:
         Adding markers for bus stops in the aoi
         '''
         for key, b_stop in self.stops.iterrows():
-            description = folium.Popup( html='<b>#' + str( key ) + '</b><br><font size="4">' + str(
-                b_stop['stop_name'] ) + '</font><br><i> lat=%s lon=%s </i>'
-                                             % (b_stop.stop_lat, b_stop.stop_lon), max_width=300 )
-            folium.Marker( location=[b_stop.stop_lat, b_stop.stop_lon], radius=10,
-                           popup=description, color='#3186cc', fill_color='#3186cc' ).add_to( self.m )
+            for type in ['GMB', 'BUS']:
+                color = 'green' if type == 'GMB' else 'red'
+                if b_stop[type] != '':
+                    description = folium.Popup( html='<b>#' + b_stop['id'] + '</b><br><font size="4">' + str(
+                        b_stop['name'] ) + '</font><br><i> lat=%s lon=%s </i>'
+                                                     % (b_stop.stop_lat, b_stop.stop_lon)
+                                                     + '<br><font size="2"><b>%s: </b>%s' % (
+                                                     type, b_stop[type]) + '</font>', max_width=300 )
+                    folium.Marker( location=[b_stop.stop_lat, b_stop.stop_lon], radius=5,
+                                   popup=description, icon=folium.Icon( color=color ) ).add_to( self.marker_cluster )
 
     def map_aoi(self):
         '''
@@ -110,12 +117,11 @@ class map_html:
         '''
         if isinstance( self.aoi, Polygon ):
             loc_list = list( self.aoi.exterior.coords )
-            folium.Polygon( loc_list, popup=str( loc_list ), color='#3186cc', fill_color='#3186cc' ).add_to( self.m )
+            folium.Polygon( loc_list, color='#3186cc', fill_color='#3186cc' ).add_to( self.marker_cluster )
         elif isinstance( self.aoi, Point ):
-            folium.Circle( [self.aoi.x, self.aoi.y], radius=self.radius,
-                           popup=str( self.radius ) + 'm lat=%s lon=%s' % (self.aoi.x, self.aoi.y), color='#3186cc',
+            folium.Circle( [self.aoi.x, self.aoi.y], radius=self.radius, color='#3186cc',
                            fill_color='#3186cc' ).add_to( self.m )
-
+        # popup=str( self.radius ) + 'm lat=%s lon=%s' % (self.aoi.x, self.aoi.y),
 
 def haversine(coord1, coord2):
     # Coordinates in decimal degrees (e.g. 43.60, -79.49)
@@ -166,9 +172,11 @@ def get_stops(y, x, type):
 
 def routes_from_stops(stops, window):
     routes = []
-    for stop in stops:
-        if stop is not '':
-            stop_info = stop.split( '||' )
+    stops = pd.DataFrame( {"stop_name": stops} )
+    stops = stops.reindex( columns=['stop_name', 'BUS', 'GMB', 'stop_lat', 'stop_lon', 'name', 'id'], fill_value='' )
+    for id, stop in stops.iterrows():
+        if stop["stop_name"] is not '':
+            stop_info = stop["stop_name"].split( '||' )
             type = stop_info[3]
             stopid = stop_info[4]
             url = 'https://www.hkemobility.gov.hk/getstopinfo.php?type=%s&stopid=%s' % (type, stopid)
@@ -176,14 +184,27 @@ def routes_from_stops(stops, window):
             cookies = dict( LANG='EN' )
             r = requests.post( url, cookies=cookies )
             xhtml = r.text
-            routes.append( html_to_table( xhtml, 1 ) )
+            route = html_to_table( xhtml, 1 )
+            routes.append( route )
+
+            # Assign Routes to relevant stops
+            bus = ['KMB', 'CTB', 'NWFB']
+            stops['GMB'][id] = route[route["Service Provider"] == "GMB"]["Route"].to_string(
+                header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
+            stops['BUS'][id] = route[route["Service Provider"].str.contains( r'\b(?:{})\b'.format( '|'.join( bus ) ) )][
+                "Route"].to_string(
+                header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
+            stops['stop_lat'][id] = stop_info[1]
+            stops['stop_lon'][id] = stop_info[0]
+            stops['name'][id] = stop_info[2]
+            stops['id'][id] = stopid
             # print(routes)
         if window is not None:
             window.progress['value'] += (10 / len( stops ))
             window.update()
     routes = pd.concat( routes, ignore_index=True )
     routes = routes.drop_duplicates()
-    return routes
+    return routes, stops
 
 
 def catch_stops_in_polygon(stop_str, polygon):
@@ -226,7 +247,7 @@ def routes_export_polygon_mode(polygon, savename='', show=False, window=None):
 
     stops = list( dict.fromkeys( stops ) )  # remove duplicated stops
     stops = list( filter( lambda x: catch_stops_in_polygon( x, polygon ), stops ) )
-    routes = routes_from_stops( stops, window )
+    routes, stops = routes_from_stops( stops, window )
 
     if savename == '':
         # File path prompt
@@ -235,10 +256,12 @@ def routes_export_polygon_mode(polygon, savename='', show=False, window=None):
                                       filetypes=(("comma seperated values", "*.csv"), ("all files", "*.*")) )
     routes.to_csv( savename )
 
-    m = folium.Map( location=[x, y], zoom_start=20, tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    attr="<a href=https://github.com/G1213123/WARS>WARS</a>" )
-    folium.Polygon( polygon.exterior.coords ).add_to( m )
-    m.save( savename.replace( '.csv', '.html' ), 'a' )
+    # m = folium.Map( location=[x, y], zoom_start=20, tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    #                attr="<a href=https://github.com/G1213123/WARS>WARS</a>" )
+    # folium.Polygon( polygon.exterior.coords ).add_to( m )
+    # m.save( savename.replace( '.csv', '.html' ), 'a' )
+
+    map_html( stops=stops, aoi=polygon, radius=None, savename=savename.replace( '.csv', '.html' ) )
 
     if show:
         webbrowser.open( savename.replace( '.csv', '.html' ) )
@@ -306,11 +329,11 @@ def routes_export_circle_mode(x, y, savename='', show=False):
                                       filetypes=(("comma seperated values", "*.csv"), ("all files", "*.*")) )
     routes.to_csv( savename )
 
-    m = folium.Map( location=[x, y], zoom_start=20, tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    attr="<a href=https://github.com/G1213123/WARS>WARS</a>" )
-    folium.Circle( [x, y], radius=radius, popup=str( radius ) + 'm lat=%s lon=%s' % (x, y), color='#3186cc',
-                   fill_color='#3186cc' ).add_to( m )
-    m.save( savename.replace( '.csv', '.html' ), 'a' )
+    # m = folium.Map( location=[x, y], zoom_start=20, tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    #                attr="<a href=https://github.com/G1213123/WARS>WARS</a>" )
+    # folium.Circle( [x, y], radius=radius, popup=str( radius ) + 'm lat=%s lon=%s' % (x, y), color='#3186cc',
+    #               fill_color='#3186cc' ).add_to( m )
+    # m.save( savename.replace( '.csv', '.html' ), 'a' )
 
     if show:
         webbrowser.open( savename.replace( '.csv', '.html' ) )
@@ -320,7 +343,7 @@ def routes_export_circle_mode(x, y, savename='', show=False):
 
 if __name__ == "__main__":
     master = tk.Tk()
-    master.title('Location')
-    master.resizable(width=tk.NO, height=tk.NO)
-    app = App(master)
+    master.title( 'Location' )
+    master.resizable( width=tk.NO, height=tk.NO )
+    app = App( master )
     master.mainloop()
