@@ -87,7 +87,7 @@ class map_html:
         centroid = self.aoi.centroid
         self.m = folium.Map( location=[centroid.x, centroid.y], zoom_start=20, tiles='OpenStreetMap' )
         # folium.LayerControl().add_to( self.m )
-        self.marker_cluster = MarkerCluster( maxClusterRadius=40 ).add_to( self.m )
+        self.marker_cluster = MarkerCluster( maxClusterRadius=10 ).add_to( self.m )
         self.map_stop()
         self.map_aoi()
         self.m.save( self.savename )
@@ -221,7 +221,7 @@ def routes_export_polygon_mode(polygon, savename='', show=False, window=None):
     xmin, ymin, xmax, ymax = polygongdf.total_bounds  # lat-long of 2 corners
     EW = haversine( (xmin, ymin), (xmax, ymin) )  # East-West extent of Toronto = 42193 metres
     NS = haversine( (xmin, ymin), (xmin, ymax) )  # North-South extent of Toronto = 30519 metres
-    d = 2000  # diamter of each hexagon in the grid = 900 metres
+    d = 900  # diamter of each hexagon in the grid = 900 metres
     w = d * np.sin( np.pi / 3 )  # horizontal width of hexagon = w = d* sin(60)
     n_cols = int( EW / w ) + 1  # Approximate number of hexagons per row = EW/w
     n_rows = int( NS / d ) + 1  # Approximate number of hexagons per column = NS/d
@@ -285,7 +285,7 @@ def get_html(y, x):
 def html_to_table(xhtml, header=2):
     """
     organize the html page to a dataframe
-    :param xhtml: html text retrived
+    :param xhtml: html text retrieved
     :param header: header row to be skipped
     :return: routes dataframe with columns ['Service Provider', 'Route', 'Origin', 'Destination']
     """
