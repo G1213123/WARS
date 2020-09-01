@@ -17,6 +17,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from folium.plugins import MarkerCluster
+from geopy.distance import geodesic
 from matplotlib.patches import RegularPolygon
 from shapely.geometry import Polygon, Point
 
@@ -78,9 +79,15 @@ class map_html:
     '''
 
     def __init__(self, **kwargs):
-        '''
+        """
         Define base map with aoi centroid focused
-        '''
+        Args:
+            stops (pandas.DataFrame): stops info stored in dataframe
+            aoi (Polygon|Tuple): geo reference of the aois
+            radius: radius for circle aois, none for polygon
+            savename (str): path for output the map
+        """
+
         self.__slots__ = ['stops', 'aoi', 'radius', 'savename']
         self.__dict__.update( kwargs )
 
@@ -91,9 +98,6 @@ class map_html:
         self.map_stop()
         self.map_aoi()
         self.m.save( self.savename )
-
-        if True:
-            webbrowser.open( self.savename )
 
     def map_stop(self):
         '''
@@ -170,10 +174,11 @@ def get_stops(y, x, type):
         return stops
 
 
-def routes_from_stops(stops, window):
+def routes_from_stops(stops, window=None):
     routes = []
     stops = pd.DataFrame( {"stop_name": stops} )
-    stops = stops.reindex( columns=['stop_name', 'BUS', 'GMB', 'stop_lat', 'stop_lon', 'name', 'id'], fill_value='' )
+    stops = stops.reindex( columns=['stop_name', 'BUS', 'GMB', 'stop_lat', 'stop_lon', 'name', 'type', 'id'],
+                           fill_value='' )
     for id, stop in stops.iterrows():
         if stop["stop_name"] is not '':
             stop_info = stop["stop_name"].split( '||' )
@@ -207,13 +212,18 @@ def routes_from_stops(stops, window):
     return routes, stops
 
 
-def catch_stops_in_polygon(stop_str, polygon):
+def catch_stops_in_polygon(stop_str, polygon, radius, point2=None):
     try:
         point = Point( float( stop_str.split( '||' )[1] ), float( stop_str.split( '||' )[0] ) )
     except (ValueError, IndexError) as e:
         return False
     else:
-        return point.within( polygon )
+        if point2:
+            point1 = (point.x, point.y)
+            point2 = (point2.x, point2.y)
+            return geodesic( point1, point2 ).m < radius
+        else:
+            return point.within( polygon )
 
 
 def routes_export_polygon_mode(polygon, savename='', show=False, window=None):
@@ -321,6 +331,12 @@ def routes_export_circle_mode(x, y, savename='', show=False):
     """
     xhtml, radius = get_html( x, y )
     routes = html_to_table( xhtml )
+    stops = []
+    for services_type in range( 1, 3 ):
+        stops = stops + get_stops( x, y, services_type )
+    stops = list( dict.fromkeys( stops ) )  # remove duplicated stops
+    stops = list( filter( lambda z: catch_stops_in_polygon( z, None, radius, Point( x, y ) ), stops ) )
+    xx, stops = routes_from_stops( stops, None )
 
     if savename == '':
         # File path prompt
@@ -334,6 +350,8 @@ def routes_export_circle_mode(x, y, savename='', show=False):
     # folium.Circle( [x, y], radius=radius, popup=str( radius ) + 'm lat=%s lon=%s' % (x, y), color='#3186cc',
     #               fill_color='#3186cc' ).add_to( m )
     # m.save( savename.replace( '.csv', '.html' ), 'a' )
+
+    map_html( stops=stops, aoi=Point( x, y ), radius=radius, savename=savename.replace( '.csv', '.html' ) )
 
     if show:
         webbrowser.open( savename.replace( '.csv', '.html' ) )
