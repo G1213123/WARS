@@ -4,6 +4,7 @@ Created on Tue Sep 10 15:37:31 2019
 
 @author: Andrew.WF.Ng
 """
+import json
 import tkinter as tk
 import urllib.request
 import webbrowser
@@ -15,10 +16,8 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 from folium.plugins import MarkerCluster
 from geopy.distance import geodesic
-from matplotlib.patches import RegularPolygon
 from shapely.geometry import Polygon, Point
 
 
@@ -111,7 +110,7 @@ class map_html:
                         b_stop['name'] ) + '</font><br><i> lat=%s lon=%s </i>'
                                                      % (b_stop.stop_lat, b_stop.stop_lon)
                                                      + '<br><font size="2"><b>%s: </b>%s' % (
-                                                     type, b_stop[type]) + '</font>', max_width=300 )
+                                                         type, b_stop[type]) + '</font>', max_width=300 )
                     folium.Marker( location=[b_stop.stop_lat, b_stop.stop_lon], radius=5,
                                    popup=description, icon=folium.Icon( color=color ) ).add_to( self.marker_cluster )
 
@@ -126,6 +125,7 @@ class map_html:
             folium.Circle( [self.aoi.x, self.aoi.y], radius=self.radius, color='#3186cc',
                            fill_color='#3186cc' ).add_to( self.m )
         # popup=str( self.radius ) + 'm lat=%s lon=%s' % (self.aoi.x, self.aoi.y),
+
 
 def haversine(coord1, coord2):
     # Coordinates in decimal degrees (e.g. 43.60, -79.49)
@@ -145,33 +145,32 @@ def haversine(coord1, coord2):
     return meters
 
 
-def get_stops(y, x, type):
+def get_stops(bbox, type):
     """
-    get the bus/gmb stop from eTransport
-    default radius of stop fetching is 1000m from the target
-    :param y: lat of the target
-    :param x: lon of the target
-    :param type: type of stops, 1 for bus, 2 for gmb
+    get the bus/gmb ... stops from eTransport
+    :param bbox: boundary box of the searching area
+    :param type: type of stops
     :return:
     """
-    url = r'https://www.hkemobility.gov.hk/loadptstop.php?type=%s&lat=%s&lon=%s' % (type, y, x)
-    # https://www.hkemobility.gov.hk/loadptstop.php?type=2&lat=22.300230999999982&lon=114.172954&sysid=2 TST
-
-    cookies = dict( LANG='EN' )
-    r = requests.post( url, cookies=cookies )
+    url = r'https://www.hkemobility.gov.hk/api/drss/layer/map/'
+    # https://www.hkemobility.gov.hk/api/drss/layer/map/?typeName=DRSS%3AVW_HKET_PTS_BUS_EN&service=WFS&version=1.0.0&request=GetFeature&outputFormat=application%2Fjson&bbox=114.16481498686883%2C22.28951336041544%2C114.17698148696039%2C22.300591641174478
+    cookies = dict( language='en' )
+    headers = dict( referer='https://www.hkemobility.gov.hk/en/route-search/pt' )
+    params = dict( typeName='DRSS:VW_HKET_PTS_%s_EN' % type, service='WFS',
+                   version='1.0.0',
+                   request='GetFeature',
+                   outputFormat='application/json',
+                   bbox='%s,%s,%s,%s' % (bbox[1], bbox[0], bbox[3], bbox[2]) )
+    r = requests.post( url, params=params, cookies=cookies, headers=headers )
     xhtml = r.text
 
-    soup = BeautifulSoup( xhtml, 'html.parser' )
-    json_string = soup.find( "iframe" )['onload'].replace( '\n', '' ).replace( '\t', '' )
     try:
-        value = json_string.split( ';' )[0].strip( 'mapLayerPtStr = ' ).strip( '\'' )
+        stops = json.loads( xhtml )
     except ValueError:
-        print( "invalid string", json_string )
+        print( "invalid string ", stops )
         return ''
-    else:
-        stops = value.split( '|*|' )
-        print( stops )
-        return stops
+
+    return stops['features']
 
 
 def routes_from_stops(stops, window=None):
@@ -212,9 +211,9 @@ def routes_from_stops(stops, window=None):
     return routes, stops
 
 
-def catch_stops_in_polygon(stop_str, polygon, radius, point2=None):
+def catch_stops_in_polygon(stop, polygon, radius=500, point2=None):
     try:
-        point = Point( float( stop_str.split( '||' )[1] ), float( stop_str.split( '||' )[0] ) )
+        point = Point( stop['geometry']['coordinates'][1], stop['geometry']['coordinates'][0] )
     except (ValueError, IndexError) as e:
         return False
     else:
@@ -227,35 +226,15 @@ def catch_stops_in_polygon(stop_str, polygon, radius, point2=None):
 
 
 def routes_export_polygon_mode(polygon, savename='', show=False, window=None):
-    polygongdf = gpd.GeoDataFrame( index=[0], geometry=[polygon], crs={'init': 'epsg:4326'} )
-    xmin, ymin, xmax, ymax = polygongdf.total_bounds  # lat-long of 2 corners
-    EW = haversine( (xmin, ymin), (xmax, ymin) )  # East-West extent of Toronto = 42193 metres
-    NS = haversine( (xmin, ymin), (xmin, ymax) )  # North-South extent of Toronto = 30519 metres
-    d = 900  # diamter of each hexagon in the grid = 900 metres
-    w = d * np.sin( np.pi / 3 )  # horizontal width of hexagon = w = d* sin(60)
-    n_cols = int( EW / w ) + 1  # Approximate number of hexagons per row = EW/w
-    n_rows = int( NS / d ) + 1  # Approximate number of hexagons per column = NS/d
+    services_type = ['BUS', 'GMB', 'MTR', 'TRAM']
 
-    w = (xmax - xmin) / n_cols  # width of hexagon
-    d = w / np.sin( np.pi / 3 )  # diameter of hexagon
-    array_of_hexes = []
-    for rows in range( 0, n_rows ):
-        hcoord = np.arange( xmin, xmax, w ) + (rows % 2) * w / 2
-        vcoord = [ymax - rows * d * 0.75] * n_cols
-        for x, y in zip( hcoord, vcoord ):  # , colors):
-            hexes = RegularPolygon( (x, y), numVertices=6, radius=d / 2 )
-            verts = hexes.get_path().vertices
-            trans = hexes.get_patch_transform()
-            points = trans.transform( verts )
-            if Polygon( points ).intersects( polygon ):
-                array_of_hexes.append( Polygon( points ) )
+    polygongdf = gpd.GeoDataFrame( index=[0], geometry=[polygon], crs={'init': 'epsg:4326'} )
+    bbox = polygongdf.total_bounds  # lat-long of 2 corners
 
     stops = []
-    for pts in array_of_hexes:
-        for services_type in range( 1, 3 ):
-            stops = stops + get_stops( pts.centroid.x, pts.centroid.y, services_type )
+    for service in services_type:
+        stops = stops + get_stops( bbox, service )
 
-    stops = list( dict.fromkeys( stops ) )  # remove duplicated stops
     stops = list( filter( lambda x: catch_stops_in_polygon( x, polygon ), stops ) )
     routes, stops = routes_from_stops( stops, window )
 
