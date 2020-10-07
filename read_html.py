@@ -18,7 +18,10 @@ import pandas as pd
 import requests
 from folium.plugins import MarkerCluster
 from geopy.distance import geodesic
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, asShape
+
+COOKIES = dict( language='en' )
+HEADERS = dict( referer='https://www.hkemobility.gov.hk/en/route-search/pt' )
 
 
 class App():
@@ -106,12 +109,13 @@ class map_html:
             for type in ['GMB', 'BUS']:
                 color = 'green' if type == 'GMB' else 'red'
                 if b_stop[type] != '':
-                    description = folium.Popup( html='<b>#' + b_stop['id'] + '</b><br><font size="4">' + str(
-                        b_stop['name'] ) + '</font><br><i> lat=%s lon=%s </i>'
-                                                     % (b_stop.stop_lat, b_stop.stop_lon)
-                                                     + '<br><font size="2"><b>%s: </b>%s' % (
-                                                         type, b_stop[type]) + '</font>', max_width=300 )
-                    folium.Marker( location=[b_stop.stop_lat, b_stop.stop_lon], radius=5,
+                    description = folium.Popup(
+                        html='<b>#' + str( b_stop['properties']['STOP_ID'] ) + '</b><br><font size="4">'
+                             + b_stop['properties']['NAME']
+                             + '</font><br><i> lat=%s lon=%s </i>' % (b_stop.geometry.x, b_stop.geometry.y)
+                             + '<br><font size="2"><b>%s: </b>%s' % (
+                                 type, b_stop[type]) + '</font>', max_width=300 )
+                    folium.Marker( location=[b_stop.geometry.x, b_stop.geometry.y], radius=5,
                                    popup=description, icon=folium.Icon( color=color ) ).add_to( self.marker_cluster )
 
     def map_aoi(self):
@@ -149,93 +153,101 @@ def get_stops(bbox, type):
     """
     get the bus/gmb ... stops from eTransport
     :param bbox: boundary box of the searching area
-    :param type: type of stops
+    :param type: type of stops in ['BUS', 'GMB']
     :return:
     """
     url = r'https://www.hkemobility.gov.hk/api/drss/layer/map/'
     # https://www.hkemobility.gov.hk/api/drss/layer/map/?typeName=DRSS%3AVW_HKET_PTS_BUS_EN&service=WFS&version=1.0.0&request=GetFeature&outputFormat=application%2Fjson&bbox=114.16481498686883%2C22.28951336041544%2C114.17698148696039%2C22.300591641174478
-    cookies = dict( language='en' )
-    headers = dict( referer='https://www.hkemobility.gov.hk/en/route-search/pt' )
     params = dict( typeName='DRSS:VW_HKET_PTS_%s_EN' % type, service='WFS',
                    version='1.0.0',
                    request='GetFeature',
                    outputFormat='application/json',
                    bbox='%s,%s,%s,%s' % (bbox[1], bbox[0], bbox[3], bbox[2]) )
-    r = requests.post( url, params=params, cookies=cookies, headers=headers )
+    r = requests.post( url, params=params, cookies=COOKIES, headers=HEADERS )
     xhtml = r.text
 
     try:
-        stops = json.loads( xhtml )
-    except ValueError:
+        stops = pd.DataFrame( json.loads( xhtml )['features'] )
+        stops['geometry'] = stops['geometry'].apply( lambda x: asShape( x ) )
+        stops['geometry'] = stops['geometry'].apply( lambda z: Point( z.y, z.x ) )
+    except KeyError:
         print( "invalid string ", stops )
-        return ''
+        return pd.DataFrame()
 
-    return stops['features']
+    return stops
 
 
 def routes_from_stops(stops, window=None):
-    routes = []
-    stops = pd.DataFrame( {"stop_name": stops} )
-    stops = stops.reindex( columns=['stop_name', 'BUS', 'GMB', 'stop_lat', 'stop_lon', 'name', 'type', 'id'],
+    """
+    Request PT routes details from the stops provided
+
+    Args:
+        stops (pd.DataFrame): DataFrame containing the stops details
+                                columns = ['type', 'id', 'geometry', 'geometry_name', 'properties']
+        window (): windows object for feedback of loading status
+
+    Returns:
+        stops (pd.DataFrame): DataFrame containing the stops details
+                                columns = ['type', 'id', 'geometry', 'geometry_name', 'properties', 'BUS', 'GMB']
+        routes (pd.DataFrame): DataFrame containing the routes list
+                                columns = ['Route', 'Service Provider', 'Origin', 'Destination']
+    """
+
+    columns = ['Route', 'Service Provider', 'Origin', 'Destination']
+    routes = pd.DataFrame( columns=columns )
+    stops = stops.reindex( columns=['type', 'id', 'geometry', 'geometry_name', 'properties', 'BUS', 'GMB'],
                            fill_value='' )
     for id, stop in stops.iterrows():
-        if stop["stop_name"] is not '':
-            stop_info = stop["stop_name"].split( '||' )
-            type = stop_info[3]
-            stopid = stop_info[4]
-            url = 'https://www.hkemobility.gov.hk/getstopinfo.php?type=%s&stopid=%s' % (type, stopid)
+        stop_id = stop['properties']['STOP_ID']
+        stop_type = stop['id'].split( '_' )[3]
+        url = 'https://www.hkemobility.gov.hk/api/drss/getTextInfo/%s/en/%s' % (stop_type, stop_id)
 
-            cookies = dict( LANG='EN' )
-            r = requests.post( url, cookies=cookies )
-            xhtml = r.text
-            route = html_to_table( xhtml, 1 )
-            routes.append( route )
+        r = requests.get( url, cookies=COOKIES, headers=HEADERS )
+        xhtml = r.text
+        try:
+            route = pd.DataFrame( json.loads( xhtml ) ).iloc[:, 0:4].set_axis( columns, axis=1 )
+        except json.decoder.JSONDecodeError:
+            print( "invalid string ", xhtml )
+            route = None
+        routes = routes.append( route )
 
-            # Assign Routes to relevant stops
-            bus = ['KMB', 'CTB', 'NWFB']
-            stops['GMB'][id] = route[route["Service Provider"] == "GMB"]["Route"].to_string(
-                header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
-            stops['BUS'][id] = route[route["Service Provider"].str.contains( r'\b(?:{})\b'.format( '|'.join( bus ) ) )][
-                "Route"].to_string(
-                header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
-            stops['stop_lat'][id] = stop_info[1]
-            stops['stop_lon'][id] = stop_info[0]
-            stops['name'][id] = stop_info[2]
-            stops['id'][id] = stopid
-            # print(routes)
-        if window is not None:
-            window.progress['value'] += (10 / len( stops ))
-            window.update()
-    routes = pd.concat( routes, ignore_index=True )
+        # Assign Routes to corresponding stops
+        bus = ['KMB', 'CTB', 'NWFB', 'NLB']
+        stops['GMB'][id] = route[route["Service Provider"] == "GMB"]["Route"].drop_duplicates().to_string(
+            header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
+        stops['BUS'][id] = route[route["Service Provider"].str.contains( r'\b(?:{})\b'.format( '|'.join( bus ) ) )][
+            "Route"].drop_duplicates().to_string(
+            header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
+        # print(routes)
+    if window is not None:
+        window.progress['value'] += (10 / len( stops ))
+        window.update()
     routes = routes.drop_duplicates()
     return routes, stops
 
 
 def catch_stops_in_polygon(stop, polygon, radius=500, point2=None):
     try:
-        point = Point( stop['geometry']['coordinates'][1], stop['geometry']['coordinates'][0] )
+        if point2:
+            point2 = (point2.x, point2.y)
+            return geodesic( stop, point2 ).m < radius
+        else:
+            return stop.within( polygon )
     except (ValueError, IndexError) as e:
         return False
-    else:
-        if point2:
-            point1 = (point.x, point.y)
-            point2 = (point2.x, point2.y)
-            return geodesic( point1, point2 ).m < radius
-        else:
-            return point.within( polygon )
 
 
 def routes_export_polygon_mode(polygon, savename='', show=False, window=None):
-    services_type = ['BUS', 'GMB', 'MTR', 'TRAM']
+    services_type = ['BUS', 'GMB']
 
     polygongdf = gpd.GeoDataFrame( index=[0], geometry=[polygon], crs={'init': 'epsg:4326'} )
     bbox = polygongdf.total_bounds  # lat-long of 2 corners
 
-    stops = []
+    stops = pd.DataFrame()
     for service in services_type:
-        stops = stops + get_stops( bbox, service )
+        stops = stops.append( get_stops( bbox, service ), ignore_index=True )
 
-    stops = list( filter( lambda x: catch_stops_in_polygon( x, polygon ), stops ) )
+    stops = stops[stops.apply( lambda x: catch_stops_in_polygon( x['geometry'], polygon ), axis=1 )]
     routes, stops = routes_from_stops( stops, window )
 
     if savename == '':
