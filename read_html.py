@@ -205,7 +205,7 @@ def routes_from_stops(stops, window=None):
         r = requests.get( url, cookies=COOKIES, headers=HEADERS )
         xhtml = r.text
         try:
-            route = pd.DataFrame( json.loads( xhtml ) ).iloc[:, 0:4].set_axis( columns, axis=1 )
+            route = pd.DataFrame(json.loads(xhtml)).iloc[:, 0:4].set_axis(columns, axis=1, inplace=False)
         except json.decoder.JSONDecodeError:
             print( "invalid string ", xhtml )
             route = None
