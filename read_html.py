@@ -94,7 +94,9 @@ class map_html:
         self.__dict__.update( kwargs )
 
         centroid = self.aoi.centroid
-        self.m = folium.Map( location=[centroid.x, centroid.y], zoom_start=20, tiles='OpenStreetMap' )
+        self.m = folium.Map(location=[centroid.x, centroid.y], zoom_start=20,
+                            tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            attr='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>')
         # folium.LayerControl().add_to( self.m )
         self.marker_cluster = MarkerCluster( maxClusterRadius=10 ).add_to( self.m )
         self.map_stop()
@@ -205,20 +207,22 @@ def routes_from_stops(stops, window=None):
         r = requests.get( url, cookies=COOKIES, headers=HEADERS )
         xhtml = r.text
         try:
-            route = pd.DataFrame(json.loads(xhtml)).iloc[:, 0:4].set_axis(columns, axis=1, inplace=False)
-        except json.decoder.JSONDecodeError:
-            print( "invalid string ", xhtml )
-            route = None
-        routes = routes.append( route )
+            route = pd.DataFrame(json.loads(xhtml)).iloc[:, 0:4]
+            if len(route) > 0:
+                route = route.set_axis(columns, axis=1, inplace=False)
+                routes = routes.append(route)
 
-        # Assign Routes to corresponding stops
-        bus = ['KMB', 'CTB', 'NWFB', 'NLB']
-        stops['GMB'][id] = route[route["Service Provider"] == "GMB"]["Route"].drop_duplicates().to_string(
-            header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
-        stops['BUS'][id] = route[route["Service Provider"].str.contains( r'\b(?:{})\b'.format( '|'.join( bus ) ) )][
-            "Route"].drop_duplicates().to_string(
-            header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
-        # print(routes)
+                # Assign Routes to corresponding stops
+                bus = ['KMB', 'CTB', 'NWFB', 'NLB']
+                stops['GMB'][id] = route[route["Service Provider"] == "GMB"]["Route"].drop_duplicates().to_string(
+                    header=False, index=False).replace('\n', ',').replace('Series([], )', '').replace(' ', '')
+                stops['BUS'][id] = route[route["Service Provider"].str.contains(r'\b(?:{})\b'.format('|'.join(bus)))][
+                    "Route"].drop_duplicates().to_string(
+                    header=False, index=False).replace('\n', ',').replace('Series([], )', '').replace(' ', '')
+                # print(routes)
+        except json.decoder.JSONDecodeError:
+            print("invalid string ", xhtml)
+            route = None
     if window is not None:
         window.progress['value'] += (10 / len( stops ))
         window.update()
