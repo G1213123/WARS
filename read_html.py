@@ -40,10 +40,13 @@ class App():
         self.e = tk.Entry( self.f, textvariable=v )
         u = tk.StringVar()
         self.d = tk.Entry( self.f, textvariable=u )
+        t = tk.StringVar()
+        self.c = tk.Entry( self.f, textvariable=t )
         buttonA = tk.Button( self.f, text="Cancel", command=self.cancelbutton )
         buttonB = tk.Button( self.f, text="OK", command=self.okbutton )
         labelx = tk.Label( self.f, text='lat' )
         labely = tk.Label( self.f, text='lon' )
+        labelr = tk.Label(self.f, text='radius')
         # self.var1 = IntVar()
         # self.var1.set(0)
         # self.cbus = tk.Checkbutton(self.f, text="bus", variable=self.var1, onvalue=1, offvalue=0)
@@ -52,6 +55,8 @@ class App():
         self.e.pack()
         labely.pack()
         self.d.pack()
+        labelr.pack()
+        self.c.pack()
         buttonA.pack()
         buttonB.pack()
         # self.cbus.pack()
@@ -66,8 +71,9 @@ class App():
         print( self.d.get() )
         x = self.e.get()
         y = self.d.get()
+        r = self.c.get()
         # bus=self.var1
-        routes_export_circle_mode( x, y )
+        routes_export_circle_mode( x, y, r )
         master.destroy()
         return 0
 
@@ -115,8 +121,8 @@ class map_html:
                         html='<b>#' + str( b_stop['properties']['STOP_ID'] ) + '</b><br><font size="4">'
                              + b_stop['properties']['NAME']
                              + '</font><br><i> lat=%s lon=%s </i>' % (b_stop.geometry.x, b_stop.geometry.y)
-                             + '<br><font size="2"><b>%s: </b>%s' % (
-                                 type, b_stop[type]) + '</font>', max_width=300 )
+                             + '<br><font size="2"><b>%s (%s): </b>%s' % (
+                                 type, b_stop[type].count(',')+1, b_stop[type]) + '</font>', max_width=300 )
                     folium.Marker( location=[b_stop.geometry.x, b_stop.geometry.y], radius=5,
                                    popup=description, icon=folium.Icon( color=color ) ).add_to( self.marker_cluster )
 
@@ -207,22 +213,24 @@ def routes_from_stops(stops, window=None):
         r = requests.get( url, cookies=COOKIES, headers=HEADERS )
         xhtml = r.text
         try:
-            route = pd.DataFrame(json.loads(xhtml)).iloc[:, 0:4]
-            if len(route) > 0:
-                route = route.set_axis(columns, axis=1, inplace=False)
-                routes = routes.append(route)
-
-                # Assign Routes to corresponding stops
-                bus = ['KMB', 'CTB', 'NWFB', 'NLB']
-                stops['GMB'][id] = route[route["Service Provider"] == "GMB"]["Route"].drop_duplicates().to_string(
-                    header=False, index=False).replace('\n', ',').replace('Series([], )', '').replace(' ', '')
-                stops['BUS'][id] = route[route["Service Provider"].str.contains(r'\b(?:{})\b'.format('|'.join(bus)))][
-                    "Route"].drop_duplicates().to_string(
-                    header=False, index=False).replace('\n', ',').replace('Series([], )', '').replace(' ', '')
-                # print(routes)
-        except json.decoder.JSONDecodeError:
-            print("invalid string ", xhtml)
+            route = pd.DataFrame( json.loads( xhtml ) ).iloc[:, 0:4]
+            route.set_axis( columns, axis=1, inplace = True )
+        except (json.decoder.JSONDecodeError, ValueError):
+            print( "invalid string ", xhtml )
             route = None
+        routes = routes.append( route )
+
+        # Assign Routes to corresponding stops
+        bus = ['KMB', 'CTB', 'NWFB', 'NLB','LWB']
+        if route is not None:
+            if stop_type == 'GMB':
+                stops['GMB'][id] = route[route["Service Provider"] == "GMB"]["Route"].drop_duplicates().to_string(
+                        header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
+            else:
+                stops['BUS'][id] = route[route["Service Provider"].str.contains( r'\b(?:{})\b'.format( '|'.join( bus ) ) )][
+                    "Route"].drop_duplicates().to_string(
+                    header=False, index=False ).replace( '\n', ',' ).replace( 'Series([], )', '' ).replace( ' ', '' )
+                # print(routes)
     if window is not None:
         window.progress['value'] += (10 / len( stops ))
         window.update()
@@ -315,7 +323,7 @@ def html_to_table(xhtml, header=2):
     return routes
 
 
-def routes_export_circle_mode(x, y, savename='', show=False):
+def routes_export_circle_mode(x, y, radius, savename='', show=False):
     """
     legacy route searching function by mannual input target location in lat lon format
     :param x: latitude of target
@@ -324,8 +332,7 @@ def routes_export_circle_mode(x, y, savename='', show=False):
     :param show: show the map of the target location
     :return: exported file path
     """
-    xhtml, radius = get_html( x, y )
-    routes = html_to_table( xhtml )
+    routes = html_to_table(  )
     stops = []
     for services_type in range( 1, 3 ):
         stops = stops + get_stops( x, y, services_type )

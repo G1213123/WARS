@@ -526,7 +526,7 @@ class frame_canvas( tkinter.Frame ):
         self.window = window
         self.zoom = 12
         self.location = "Hong Kong"
-        self.api = 'AIzaSyCpZMD9JKcb3bfDRC7xE2H6oBp-DhDv4s8'
+        self.api = 'AIzaSyBoEBS4xJOnr-wIK-bSoBVpwPkiUxoTuwI'
         self.lat = 22.305349
         self.lng = 114.171598
         self.minlat, self.maxlat, self.minlng, self.maxlng = None, None, None, None

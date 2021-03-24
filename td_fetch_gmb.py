@@ -14,7 +14,7 @@ def fetch_archive(path, window=None):
     for id in range( 0, 4000 ):
         print( id )
         with requests.Session() as s:
-            url = 'https://www.hkemobility.gov.hk/ris_page/get_gmb_detail.php?route_id=%s&lang=EN' % id
+            url = 'https://h2-app-rr.hkemobility.gov.hk/ris_page/get_gmb_detail.php?route_id=%s&lang=EN' % id
             r = s.get( url )
             soup = BeautifulSoup( r.text, 'html.parser' )
             header = soup.find( "td", attrs={"class": "HLevel1"} )
