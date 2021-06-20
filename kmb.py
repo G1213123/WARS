@@ -76,7 +76,7 @@ def main(route=None, **kwargs):
         # detect change in bound
         legacy_bound = 0
 
-        # iter through all routes
+        # iter through all special route (bidirectional) of a route
         for j in range(len(output1)):  # j=0   #j=1
             min1 = 61
             min2 = 61
@@ -87,6 +87,7 @@ def main(route=None, **kwargs):
 
             try:
                 bound = output1[j]['BOUND']
+                # Request for route details if bound changed
                 if bound != legacy_bound:
                     url = r'http://search.kmb.hk/KMBWebSite/Function/FunctionRequest.ashx?action=getschedule&route=%s&bound=%s' % (
                         route[i], bound)
@@ -97,7 +98,6 @@ def main(route=None, **kwargs):
                     schedule = pd.DataFrame(output['data'][service])
 
                     mother_ori = schedule.iloc[0]['Origin_Eng']
-
                     mother_dest = schedule.iloc[0]['Destination_Eng']
                 # print (output)
 

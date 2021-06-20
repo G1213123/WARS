@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Reading the HKeMobility web layer of PT services (Bus and GMB) and extract the bus stop for searching of routes
+
 Created on Tue Sep 10 15:37:31 2019
 
 @author: Andrew.WF.Ng
@@ -24,7 +26,11 @@ COOKIES = dict( language='en' )
 HEADERS = dict( referer='https://www.hkemobility.gov.hk/en/route-search/pt' )
 
 
-class App():
+class App:
+    """
+    Standalone interface for reading the HKeMobility web service
+    """
+
     def __init__(self, master):
         self.display_button_entry( master )
         self.x = 960
@@ -83,7 +89,7 @@ class App():
 
 class map_html:
     '''
-    Creating a Web based map using folium module for logging the assessed area
+    Export a Web based map using folium module for logging the assessed area
     '''
 
     def __init__(self, **kwargs):
@@ -282,7 +288,7 @@ def routes_export_polygon_mode(polygon, savename='', show=False, window=None):
     return savename
 
 
-def get_html(y, x):
+def get_nearby_stops_html(y, x):
     url = r'https://www.hkemobility.gov.hk/getnearby.php?dist=500&lat=%s&lon=%s&golang=EN' % (y, x)
     # url = http://www.hkemobility.gov.hk/getnearby.php?dist=1000&lat=22.33236511796521&lon=114.18292213964844&sysid=6
 
@@ -325,7 +331,7 @@ def html_to_table(xhtml, header=2):
 
 def routes_export_circle_mode(x, y, radius, savename='', show=False):
     """
-    legacy route searching function by mannual input target location in lat lon format
+    legacy route searching function by mannual input target location in lat lon format with search radius
     :param x: latitude of target
     :param y: longitude of target
     :param savename: savename input, if none is provided, open a file choosing prompt

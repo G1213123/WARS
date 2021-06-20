@@ -3,7 +3,6 @@ from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import asksaveasfilename
 
-
 import pandas as pd
 
 
@@ -15,7 +14,7 @@ def file_prompt():
     # print(filename)
     return filename
 
-
+# Save file prompt
 def save_prompt():
     Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
     savename = asksaveasfilename(defaultextension=".csv", title="save file",
@@ -24,6 +23,7 @@ def save_prompt():
     return savename
 
 
+# Default file save location
 class file_init:
     def __init__(self,savename):
         self.filename = file_prompt()

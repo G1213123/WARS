@@ -5,13 +5,6 @@ Created on Mon Sep 23 15:52:12 2019
 @author: Andrew.WF.Ng
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Sep 23 10:02:03 2019
-
-@author: Andrew.WF.Ng
-"""
-
 # http://www.16seats.net/chi/gmb/gh_2.html
 
 import datetime
@@ -23,15 +16,19 @@ import general as gn
 
 
 class SearchGMB:
-    def __init__(self, j, dist, save):
-        self.j = j
+    """
+    Search the GMB file within the local archived gmb route html pages
+    """
+
+    def __init__(self, route_num, dist, save):
+        self.route_num = route_num
         self.dist = dist
         self.dist_dict = {'h': 'Hong Kong Island', 'k': 'Kowloon', 'n': 'New Territories'}
         self.save = save
         self.f = self.open_gmb()
 
     def gmb_name(self, dist):
-        tag = self.dist_dict[dist] + ' GMB Route No. ' + str( self.j ) + '.html'
+        tag = self.dist_dict[dist] + ' GMB Route No. ' + str( self.route_num ) + '.html'
         tag = tag.replace( ' ', '_' )
         return tag
 
@@ -43,14 +40,14 @@ class SearchGMB:
         try:
             f = open( url, encoding='UTF-8' )
         except IOError:
-            print( self.j + ' is not a ' + self.dist_dict[dist] + ' route' )
+            print( self.route_num + ' is not a ' + self.dist_dict[dist] + ' route' )
             for key in self.dist_dict:
                 try:
                     tag = self.gmb_name( key )
                     url = self.save + r'\%s' % tag
                     f = open( url, encoding='UTF-8' )
                 except IOError:
-                    print( self.j + ' is not a ' + self.dist_dict[key] + ' route' )
+                    print( self.route_num + ' is not a ' + self.dist_dict[key] + ' route' )
                     fail += 1
         if fail == 3:
             return None, fail
@@ -58,8 +55,12 @@ class SearchGMB:
 
 
 class gmb_get_headway:
+    """
+    Extract gmb headway data from the html page
+    """
+
     def __init__(self, route, dist='n', savename=None, window=None, archive=None, **kwargs):
-        # all those keys will be initialized as class attributes
+        # all **kwargs keys will be initialized as class attributes
         allowed_keys = {'am1', 'am2', 'pm1', 'pm2'}
         # initialize all allowed keys to false
         self.__dict__.update( (key, False) for key in allowed_keys )

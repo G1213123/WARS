@@ -4,6 +4,10 @@ import sys
 import tkinter
 from io import StringIO
 
+"""
+Dump the app variables into json file
+Display the app variables in the Log tab
+"""
 
 def var_logging(modules):
     # modules = [self, self.frame_map, self.route, self.headway]
