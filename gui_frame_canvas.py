@@ -17,12 +17,12 @@ import read_html
 
 class AoiInstance:
     """
-    object of the area enclosed by users (Area of Interest)
+    class for the object of the area enclosed by users (Area of Interest)
     """
 
     def __init__(self, point, type, id, radius=0) -> None:
         """
-        initial set-up of the area
+        initial set-up of the area object
 
         Args:
             point (list of (float,float)|(float,float)): a single or a list of vertices (tuple) for a polygon object
@@ -234,7 +234,7 @@ class frame_canvas( tkinter.Frame ):
 
         elif self.aoimode == 'Circle':
             if self.websource.get() == 'eTransport':
-                html, radius = read_html.get_html( point['lat'], point['lng'] )
+                html, radius = read_html.get_nearby_stops_html( point['lat'], point['lng'] )
             else:
                 radius = 500
             size = radius / scale
