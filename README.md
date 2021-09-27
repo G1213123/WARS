@@ -1,6 +1,6 @@
 # WARS
 WEB AUTOMATIC ROUTES SCRAPPING
-> "*War Never ChangeS.*"
+> "*War Never Changes.*"
 
 
 GUI routes scrapping from eTransport and data.gov.hk headway database
