@@ -9,6 +9,7 @@ import numpy as np
 import requests
 from shapely.geometry import Point, Polygon
 
+import api
 import combine_routes
 import data_gov
 import gui_popups
@@ -115,6 +116,13 @@ class frame_canvas( tkinter.Frame ):
             'lng': (((mousePoint['x'] / tiles) - 128) / (256 / 360))
         }
         return mouseLatLng
+
+    def api_setting(self):
+        """
+            Input User defined Google Static Map API key
+        """
+        self.ApiPopup = gui_popups.ApiInput()
+        self.api = self.ApiPopup.value
 
     def rev_FX(self, circlelat, circlelng):
         """
@@ -526,7 +534,7 @@ class frame_canvas( tkinter.Frame ):
         self.window = window
         self.zoom = 12
         self.location = "Hong Kong"
-        self.api = 'AIzaSyBoEBS4xJOnr-wIK-bSoBVpwPkiUxoTuwI'
+        self.api = api.load_api()
         self.lat = 22.305349
         self.lng = 114.171598
         self.minlat, self.maxlat, self.minlng, self.maxlng = None, None, None, None
@@ -601,9 +609,12 @@ class frame_canvas( tkinter.Frame ):
         self.btnB.pack( side='right' )
 
         ###############################################################
-        self.mapimage = self.getmap()
         self.canvas = tkinter.Canvas( self.frmCanvas, width=window.width, height=window.height )
-        self.canvas.create_image( 0, 0, image=self.mapimage, anchor=tkinter.NW, tags="map" )
+        try:
+            self.mapimage = self.getmap()
+            self.canvas.create_image( 0, 0, image=self.mapimage, anchor=tkinter.NW, tags="map" )
+        except tkinter.TclError:
+            pass
         self.delta_org = [0, 0]
         self.canvas.bind( "<Button-3>", self.canvasclick )
         self.canvas.bind( '<ButtonPress-1>', self.move_from )

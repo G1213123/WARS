@@ -5,6 +5,10 @@ from tkinter import filedialog
 
 import gui_logging
 
+DIRECTORY = os.path.expanduser( '~/Documents/Python_Scripts/WARS/cfg' )
+if not os.path.exists( DIRECTORY ):
+    os.makedirs( DIRECTORY )
+
 
 class SaveSetting( tkinter.Toplevel ):
     """    # Prompt for configuring save settings
@@ -27,10 +31,7 @@ class SaveSetting( tkinter.Toplevel ):
         self.aoi_nos = aoi_nos
 
         # create save config file directory
-        directory = os.path.expanduser('~/Documents/Python_Scripts/WARS/cfg')
-        if not os.path.exists( directory ):
-            os.makedirs( directory )
-        self.savename = directory +  r'/save.cfg'
+        self.savename = DIRECTORY + r'/save.cfg'
         self.__modules = [self]  # declare self as the only module for save setting logging
 
         # load previous settings, if not exist, load default settings
@@ -121,4 +122,13 @@ class SaveSetting( tkinter.Toplevel ):
         for module in self.__modules:
             for key, value in save_settings[module.name].items():
                 if key != 'aoi_nos':
-                    setattr(module, key, value)
+                    setattr( module, key, value )
+
+    def load_api(self):
+        savename = os.path.expanduser( '~/Documents/Python_Scripts/WARS/cfg/api.cfg' )
+        try:
+            with open( savename, 'rb' ) as handle:
+                self.api = pickle.load( handle )
+        except (OSError, IOError) as e:
+            return 1
+        return 0

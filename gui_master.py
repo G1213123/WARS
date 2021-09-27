@@ -11,12 +11,13 @@ from tkinter import messagebox
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename, askdirectory, asksaveasfilename
 
+import api
 import gui_frame_canvas
 import gui_logging
 from gui_headway import get_headway
 from gui_routes import displayroutes
 
-from pyproj import _datadir, datadir
+
 # for pyinstaller exe packaging
 
 class MainWindow( tkinter.Toplevel ):
@@ -86,6 +87,16 @@ class MainWindow( tkinter.Toplevel ):
             self.route.update_list( self.frame_map.saves )
             self.route.read_csv( None )
 
+    """
+    Depreciate method for pre-caching all GMB route websites for data mining
+    """
+
+    def load_api(self):
+        popup = api.ApiInput()
+        self.root.wait_window( popup )
+        print( popup.value )
+        self.frame_map.api = popup.value
+
     def gmb_archive(self):
         import td_fetch_gmb
         tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
@@ -126,6 +137,7 @@ class MainWindow( tkinter.Toplevel ):
 
     def __init__(self, parent):
         tkinter.Toplevel.__init__( self, parent )
+        self.root = parent
         self.name = 'Mainwindow'
         self.width = 640
         self.height = 640
@@ -142,10 +154,12 @@ class MainWindow( tkinter.Toplevel ):
         self.menu1.add_command( label='Save As', command=lambda: self.save_as_work( True ) )
         self.menu1.add_command( label='Save', command=lambda: self.save_as_work( False ), state=tkinter.DISABLED )
         self.menu1.add_command( label='Load', command=self.loadwork )
+        self.menu1.add_separator()
+        self.menu1.add_command( label='API key', command=self.load_api )
         self.filemenu.add_cascade( label='File', menu=self.menu1 )
 
         self.menu2 = tkinter.Menu( self.filemenu, tearoff=0 )
-        self.menu2.add_command( label='Create GMB Archive', command=self.gmb_archive )
+        # self.menu2.add_command( label='Create GMB Archive', command=self.gmb_archive )
         self.menu2.add_command( label='Import Routes', command=self.import_routes )
         self.filemenu.add_cascade( label='Import', menu=self.menu2 )
 
@@ -206,12 +220,17 @@ class MainWindow( tkinter.Toplevel ):
 
         self.status.pack( side='left' )
 
-        self.frame_map.reload()
+        # self.frame_map.reload()
 
 
 if __name__ == "__main__":
     root = tkinter.Tk()
     root.withdraw()
+
+    if api.load_api() is None:
+        popup = api.ApiInput( root )
+        root.wait_window( popup )
+
     MainWindow( root )
     root.mainloop()
 

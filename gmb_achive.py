@@ -183,4 +183,4 @@ class gmb_get_headway:
 
 
 if __name__ == "__main__":
-    gmb_get_headway( None, savename='test.csv', am1=7, am2=8, pm1=17, pm2=18 )
+    gmb_get_headway( ['76K'], savename='test.csv', am1=7, am2=8, pm1=17, pm2=18 )
