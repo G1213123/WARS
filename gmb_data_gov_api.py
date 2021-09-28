@@ -38,57 +38,24 @@ class gmb_get_headway:
         if self.window:
             self.window.headway['cursor'] = 'watch'
             self.window.cprint( 'Connecting to Gov Data web service' )
-        for idx, direction in enumerate( seq['direction'] ):
+        for idx, direction in enumerate( seq['directions'] ):
             for period in direction['headways']:
-                weekday_check = any( period['weekdays'][0:4] )
-                am_check = gn.time_in_period( p_start, p_end, self.am1, self.am2 )
-                fit_criteria =
-                if 'Mondays' in val:
-                    period = seq[idx + 1]
-                    if '-' in period:
-                        # handle when a frequency in a fixed time period was given
-                        headway = self.timetable.iloc[idx + 1][2]
-                        p_start = datetime.datetime.strptime( period.split( ' - ' )[0], '%I:%M %p' ).time()
-                        p_end = datetime.datetime.strptime( period.split( ' - ' )[1], '%I:%M %p' ).time()
-                        if gn.time_in_period( p_start, p_end, self.am1, self.am2 ):
-                            self.PT.iloc[-1]['headway_am'] = headway
-                            self.PT.iloc[-1]['period_am'] = period
-                        if gn.time_in_period( p_start, p_end, self.pm1, self.pm2 ):
-                            self.PT.iloc[-1]['headway_pm'] = headway
-                            self.PT.iloc[-1]['period_pm'] = period
-                    else:
-                        # handle when a list of exact departure time was given
-                        min_headway1 = ' '
-                        min_headway2 = ' '
-                        freq1 = 0
-                        freq2 = 0
-                        for t in temp[1:]:
-                            time = datetime.datetime.strptime( t, '%I:%M %p' ).time()
-                            if gn.time_in_period( time, time, self.am1,
-                                                  self.am2 ):
-                                freq1 += 1
-                                min_headway1 += t
-                                min_headway1 += ' '
-                                self.PT.iloc[-1]['period_am'] = time
-                            if gn.time_in_period( time, time, self.pm1,
-                                                  self.pm2 ):
-                                freq2 += 1
-                                min_headway2 += t
-                                min_headway2 += ' '
-                                self.PT.iloc[-1]['period_pm'] = time
-
-                        if freq1 == 1:
-                            self.PT.iloc[-1]['headway_am'] = min_headway1 + '(' + str( freq1 ) + ' trip only)'
-                        elif freq1 > 1:
-                            self.PT.iloc[-1]['headway_am'] = min_headway1 + '(' + str( freq1 ) + ' trips only)'
-
-                        if freq2 == 1:
-                            self.PT.iloc[-1]['headway_pm'] = min_headway2 + '(' + str( freq2 ) + ' trip only)'
-                        elif freq2 > 1:
-                            self.PT.iloc[-1]['headway_pm'] = min_headway2 + '(' + str( freq2 ) + ' trips only)'
+                weekday_check = any( period['weekdays'][0:5] )
+                if weekday_check:
+                    # handle when a frequency in a fixed time period was given
+                    headway = period['frequency']
+                    if headway is None: headway = '1 trip only'
+                    p_start = datetime.datetime.strptime( period['start_time'], '%H:%M:%S' ).time()
+                    p_end = datetime.datetime.strptime( period['end_time'], '%H:%M:%S' ).time()
+                    if gn.time_in_period( p_start, p_end, self.am1, self.am2 ):
+                        self.PT.iloc[-1]['headway_am'] = headway
+                        self.PT.iloc[-1]['period_am'] = period['start_time'] + ' - ' + period['end_time']
+                    if gn.time_in_period( p_start, p_end, self.pm1, self.pm2 ):
+                        self.PT.iloc[-1]['headway_pm'] = headway
+                        self.PT.iloc[-1]['period_pm'] = period['start_time'] + ' - ' + period['end_time']
             self.PT.iloc[-1]['route'] = self.j
-            self.PT.iloc[-1]['info'] = self.info.replace( '<->', '-' )
-            self.PT.iloc[-1]['bound'] = seq
+            self.PT.iloc[-1]['info'] = direction['orig_en'] + ' - ' + direction['dest_en']
+            self.PT.iloc[-1]['bound'] = direction['route_seq']
 
     # tango='88'
 
@@ -96,7 +63,7 @@ class gmb_get_headway:
         tango, savename = gn.read_route( self.route, self.savename )
 
         self.PT = pd.DataFrame(
-            columns=['route', 'info', 'headway_am', 'headway_pm', 'bound', 'period_am', 'period_pm'] )
+            columns=['route', 'info', 'headway_am', 'headway_pm', 'bound', 'period_am', 'period_pm', 'Remarks'] )
 
         for j in tango:  # j='61S'
             self.j = j
@@ -108,15 +75,16 @@ class gmb_get_headway:
 
             for seq in data:
                 self.read_data( seq )
+                self.PT.iloc[-1]['Remarks'] = seq['description_en']
 
             if self.window is not None:
                 self.window.headway['cursor'] = 'watch'
                 self.window.progress['value'] += 1
                 self.window.cprint( 'retriving headway data of route ' + self.j )
                 self.window.update()
-        self.window.headway['cursor'] = 'arrow'
-        self.PT.to_excel( savename )
+        if self.window: self.window.headway['cursor'] = 'arrow'
+        self.PT.to_csv( savename )
 
 
 if __name__ == "__main__":
-    gmb_get_headway( ['69'], dist='h', savename='test\\test.csv', am1=7, am2=8, pm1=17, pm2=18 )
+    gmb_get_headway( ['69'], dist='h', savename='test.csv', am1=7, am2=8, pm1=17, pm2=18 )

@@ -5,6 +5,9 @@ from tkinter import ttk, messagebox
 
 import pandas as pd
 
+import ctb
+import gmb_data_gov_api
+import kmb
 from gui_routes import treeview_sort_column
 
 
@@ -114,31 +117,25 @@ class get_headway( tkinter.Frame ):
         return headway_data
 
     def kmb(self, routeSP, savename, progress):
-        import kmb
         kmb_headway = kmb.main( routeSP, am1=self.am1.get(), am2=self.am2.get(), pm1=self.pm1.get(), pm2=self.pm2.get(),
                                 savename=savename, window=progress )
         self.write_headway( kmb_headway )
         return kmb_headway
 
     def gmb(self, routeSP, savename, progress):
-        if self._archive == '':
-            messagebox.showwarning( 'Warning', 'Please create gmb archive through \n "Import > create gmb archive"' )
-            return None
-        elif self.variable2.get() == 'Select District':
+        if self.variable2.get() == 'Select District':
             messagebox.showwarning( 'Warning', 'Please Select District' )
             return None
         else:
-            import gmb_achive
-            gmb_headway = gmb_achive.gmb_get_headway( routeSP, dist=self.variable2.get()[:1].lower(),
-                                                      am1=self.am1.get(), am2=self.am2.get(),
-                                                      pm1=self.pm1.get(),
-                                                      pm2=self.pm2.get(), savename=savename, window=progress,
-                                                      archive=self._archive )
+            gmb_headway = gmb_data_gov_api.gmb_get_headway( routeSP, dist=self.variable2.get()[:1].lower(),
+                                                            am1=self.am1.get(), am2=self.am2.get(),
+                                                            pm1=self.pm1.get(),
+                                                            pm2=self.pm2.get(), savename=savename, window=progress,
+                                                            archive=self._archive )
             self.write_headway( gmb_headway.PT )
             return gmb_headway.PT
 
     def ctb(self, routeSP, savename, progress):
-        import ctb
         ctb_headway = ctb.main( routeSP, am1=self.am1.get(), am2=self.am2.get(), pm1=self.pm1.get(), pm2=self.pm2.get(),
                                 savename=savename, window=progress )
         self.write_headway( ctb_headway )
