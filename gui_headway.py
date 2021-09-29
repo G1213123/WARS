@@ -6,7 +6,7 @@ from tkinter import ttk, messagebox
 import pandas as pd
 
 import ctb
-import gmb_data_gov_api
+import gmb_emobility
 import kmb
 from gui_routes import treeview_sort_column
 
@@ -127,11 +127,11 @@ class get_headway( tkinter.Frame ):
             messagebox.showwarning( 'Warning', 'Please Select District' )
             return None
         else:
-            gmb_headway = gmb_data_gov_api.gmb_get_headway( routeSP, dist=self.variable2.get()[:1].lower(),
-                                                            am1=self.am1.get(), am2=self.am2.get(),
-                                                            pm1=self.pm1.get(),
-                                                            pm2=self.pm2.get(), savename=savename, window=progress,
-                                                            archive=self._archive )
+            gmb_headway = gmb_emobility.gmb_get_headway( routeSP, dist=self.variable2.get()[:1].lower(),
+                                                         am1=self.am1.get(), am2=self.am2.get(),
+                                                         pm1=self.pm1.get(),
+                                                         pm2=self.pm2.get(), savename=savename, window=progress,
+                                                         archive=self._archive )
             self.write_headway( gmb_headway.PT )
             return gmb_headway.PT
 
