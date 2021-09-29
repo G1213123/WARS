@@ -109,7 +109,7 @@ class get_headway( tkinter.Frame ):
         else:
             routeSP = route[route['Service Provider'].str.contains( SP.upper() )]['Route']
         print(routeSP)
-        routeSP = list( dict.fromkeys( routeSP ) )
+        routeSP = [str( i ) for i in list( dict.fromkeys( routeSP ) )]
         savename = os.path.join( self.window.frame_map.saves['dirname'],
                                  SP + '-' + self.am1.get() + '-' + self.pm1.get() + '.xlsx' )
         self.window.progress.config( maximum=len( routeSP ) + extra_loading, value=0 )

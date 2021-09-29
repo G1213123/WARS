@@ -42,15 +42,15 @@ class SearchGMB:
         f = requests.post( url, data=data, headers=header )
         if 'ROUTE_LIST' in f.json():
             for route in f.json()['ROUTE_LIST']:
-                if route['ROUTE_REAL_NAME'] == self.route_num:
+                if route['ROUTE_REAL_NAME'] == str( self.route_num ):
                     f = route['HYPERLINK']
         else:
-            print( self.route_num + ' is not a ' + self.dist_dict[dist] + ' route' )
+            print( str( self.route_num ) + ' is not a ' + self.dist_dict[dist] + ' route' )
             if trial == 3:
                 return None
             else:
                 dist = list( self.dist_dict )[(list( self.dist_dict ).index( dist ) + 1) % 3]
-                f = self.load_gmb_data( dist, data, trial + 1 )
+                f = self.load_gmb_data( dist, None, trial + 1 )
         return f
 
 
@@ -175,7 +175,7 @@ class gmb_get_headway:
                 if self.window is not None:
                     self.window.headway['cursor'] = 'watch'
                     self.window.progress['value'] += 1
-                    self.window.cprint( 'retriving headway data of route ' + self.j )
+                    self.window.cprint( 'retriving headway data of route ' + str( self.j ) )
                     self.window.update()
         if self.window:
             self.window.headway['cursor'] = 'arrow'
