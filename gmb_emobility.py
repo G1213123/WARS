@@ -10,7 +10,9 @@ Created on Mon Sep 23 15:52:12 2019
 import datetime
 
 import pandas as pd
+import requests
 from bs4 import BeautifulSoup
+from requests.structures import CaseInsensitiveDict
 
 import general as gn
 
@@ -20,38 +22,36 @@ class SearchGMB:
     Search the GMB file within the local archived gmb route html pages
     """
 
-    def __init__(self, route_num, dist, save):
+    def __init__(self, route_num, dist):
         self.route_num = route_num
         self.dist = dist
-        self.dist_dict = {'h': 'Hong Kong Island', 'k': 'Kowloon', 'n': 'New Territories'}
-        self.save = save
-        self.f = self.open_gmb()
+        self.dist_dict = {'h': 'HKI', 'k': 'KLN', 'n': 'NT'}
+        # self.f = self.load_gmb_data()
 
-    def gmb_name(self, dist):
-        tag = self.dist_dict[dist] + ' GMB Route No. ' + str( self.route_num ) + '.html'
-        tag = tag.replace( ' ', '_' )
-        return tag
-
-    def open_gmb(self, **kwargs):
-        dist = kwargs.get( 'dist', self.dist )
-        tag = self.gmb_name( dist )
-        url = self.save + r'\%s' % tag
+    def load_gmb_data(self, dist=None, data=None, trial=0):
+        url = 'https://www.hkemobility.gov.hk/api/em'
+        header = CaseInsensitiveDict()
+        header["referer"] = "https://www.hkemobility.gov.hk/en/route-search/pt"
+        header["Content-Type"] = "application/json"
+        if dist is None:
+            dist = self.dist
+        if data is None:
+            data = '{"api":"getrouteinfo7","param":{"lang":"EN","route_name":"%s","company_index":"-2",' \
+                   '"region":"%s","mode":"","stop_type":""}}' % (self.route_num, self.dist_dict[dist])
         fail = 0
-        try:
-            f = open( url, encoding='UTF-8' )
-        except IOError:
-            print( self.route_num + ' is not a ' + self.dist_dict[dist] + ' route' )
-            for key in self.dist_dict:
-                try:
-                    tag = self.gmb_name( key )
-                    url = self.save + r'\%s' % tag
-                    f = open( url, encoding='UTF-8' )
-                except IOError:
-                    print( self.route_num + ' is not a ' + self.dist_dict[key] + ' route' )
-                    fail += 1
-        if fail == 3:
-            return None, fail
-        return f, fail
+        f = requests.post( url, data=data, headers=header )
+        if 'ROUTE_LIST' in f.json():
+            for route in f.json()['ROUTE_LIST']:
+                if route['ROUTE_REAL_NAME'] == str( self.route_num ):
+                    f = route['HYPERLINK']
+        else:
+            print( str( self.route_num ) + ' is not a ' + self.dist_dict[dist] + ' route' )
+            if trial == 3:
+                return None
+            else:
+                dist = list( self.dist_dict )[(list( self.dist_dict ).index( dist ) + 1) % 3]
+                f = self.load_gmb_data( dist, None, trial + 1 )
+        return f
 
 
 class gmb_get_headway:
@@ -59,7 +59,7 @@ class gmb_get_headway:
     Extract gmb headway data from the html page
     """
 
-    def __init__(self, route, dist='n', savename=None, window=None, archive=None, **kwargs):
+    def __init__(self, route, dist='n', savename=None, window=None, **kwargs):
         # all **kwargs keys will be initialized as class attributes
         allowed_keys = {'am1', 'am2', 'pm1', 'pm2'}
         # initialize all allowed keys to false
@@ -69,7 +69,6 @@ class gmb_get_headway:
         self.route = route
         self.dist = dist
         self.savename = savename
-        self.archive = archive
         self.window = window
         self.main()
         self.__dict__.update( kwargs )
@@ -140,9 +139,9 @@ class gmb_get_headway:
         for j in tango:  # j='61S'
             self.j = j
             print( j )
-            f, fail = SearchGMB( j, self.dist, self.archive ).open_gmb()
+            f = SearchGMB( j, self.dist ).load_gmb_data()
             if f is not None:
-                html = f.read()
+                html = requests.get( f ).text
                 soup = BeautifulSoup( html, 'html.parser' )
                 self.info = soup.find( "td", attrs={"class": "maincontent"} ).text
                 element = soup.find( text="Timetable" )
@@ -176,11 +175,12 @@ class gmb_get_headway:
                 if self.window is not None:
                     self.window.headway['cursor'] = 'watch'
                     self.window.progress['value'] += 1
-                    self.window.cprint('retriving headway data of route ' + self.j)
+                    self.window.cprint( 'retriving headway data of route ' + str( self.j ) )
                     self.window.update()
-        self.window.headway['cursor'] = 'arrow'
+        if self.window:
+            self.window.headway['cursor'] = 'arrow'
         self.PT.to_excel( savename )
 
 
 if __name__ == "__main__":
-    gmb_get_headway( None, savename='test.csv', am1=7, am2=8, pm1=17, pm2=18 )
+    gmb_get_headway( ['411'], savename='test.csv', am1=7, am2=8, pm1=17, pm2=18 )

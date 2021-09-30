@@ -78,8 +78,8 @@ def time_in_period(x, y, start, end):
         x2 = x
         y1 = y
         y2 = y
-    return (start <= x1 < end or start <= y1 < end) or (x1 <= start and y1 >= end) or \
-           (start <= x2 < end or start <= y2 < end) or (x2 <= start and y2 >= end)
+    return (start <= x1 < end or start < y1 <= end) or (x1 < start and y1 > end) or \
+           (start <= x2 < end or start < y2 <= end) or (x2 < start and y2 > end)
 
 
 def float_to_time(x):

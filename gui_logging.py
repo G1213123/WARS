@@ -55,4 +55,5 @@ class ShowLog( tkinter.Frame ):
 
         sys.stdout = old_stdout
         result_string = result.getvalue()
+        self.log_box.delete( "1.0", tkinter.END )
         self.log_box.insert( tkinter.INSERT, result_string )
