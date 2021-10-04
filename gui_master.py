@@ -228,7 +228,7 @@ if __name__ == "__main__":
     root.withdraw()
 
     if api.load_api() is None:
-        popup = api.ApiInput( root )
+        popup = api.ApiInput()
         root.wait_window( popup )
 
     MainWindow( root )
