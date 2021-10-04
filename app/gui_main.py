@@ -4,23 +4,22 @@ Created on Jan 1, 2020
 @author: Andrew.WF.Ng
 '''
 
-import os
 import pickle
 import tkinter
 from tkinter import messagebox
 from tkinter import ttk
-from tkinter.filedialog import askopenfilename, askdirectory, asksaveasfilename
+from tkinter.filedialog import askopenfilename, asksaveasfilename
 
-import api
-import gui_frame_canvas
-import gui_logging
-from gui_headway import get_headway
-from gui_routes import displayroutes
+from app import gui_frame_canvas
+from app import gui_logging
+from app.gui_headway import GetHeadway
+from utils import google_map_api
+from app.gui_routes import displayroutes
 
 
 # for pyinstaller exe packaging
 
-class MainWindow( tkinter.Toplevel ):
+class MainWindow(tkinter.Toplevel):
     """
     Mainwindow is the mother window for containing all the widgets.
     The direct child widgets are the file menu and tabs.
@@ -54,51 +53,52 @@ class MainWindow( tkinter.Toplevel ):
         ftypes = [('Workspace Save', '.wsv')]
         if saveas:
             tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-            self.path = asksaveasfilename( defaultextension='*.wsv', filetypes=ftypes, initialfile='workspace1.wsv',
-                                           title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
-            self.menu1.entryconfig( "Save", state=tkinter.NORMAL )
+            self.path = asksaveasfilename(defaultextension='*.wsv', filetypes=ftypes, initialfile='workspace1.wsv',
+                                          title="Select save directory")  # show an "Open" dialog box and return the path to the selected file
+            self.menu1.entryconfig("Save", state=tkinter.NORMAL)
         if self.path:
-            self.cprompt( 0, 'Saving...' )
+            self.cprompt(0, 'Saving...')
             self.update()
-            PTApp = gui_logging.var_logging( self.__modules )
+            PTApp = gui_logging.var_logging(self.__modules)
 
-            with open( self.path, 'wb' ) as handle:
-                pickle.dump( PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL )
-        self.cprompt( 1 )
+            with open(self.path, 'wb') as handle:
+                pickle.dump(PTApp, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        self.cprompt(1)
 
     def loadwork(self):
         MsgBox = 'yes'
-        if len( self.frame_map.aoi ) > 0 and self.frame_map.aoi[-1].type != 'Initiate':
-            MsgBox = messagebox.askquestion( 'Load Save File',
-                                             'Loading saves will clear your AOIs, are you sure?',
-                                             icon='warning' )
+        if len(self.frame_map.aoi) > 0 and self.frame_map.aoi[-1].type != 'Initiate':
+            MsgBox = messagebox.askquestion('Load Save File',
+                                            'Loading saves will clear your AOIs, are you sure?',
+                                            icon='warning')
         if MsgBox == 'yes':
             tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-            save = askopenfilename( title="Load save", filetypes=(("save", "*.wsv"), (
-                "all files", "*.*")) )  # show an "Open" dialog box and return the path to the selected file
-            with open( save, 'rb' ) as handle:
-                PTApp = pickle.load( handle )
+            save = askopenfilename(title="Load save", filetypes=(("save", "*.wsv"), (
+                "all files", "*.*")))  # show an "Open" dialog box and return the path to the selected file
+            with open(save, 'rb') as handle:
+                PTApp = pickle.load(handle)
             for module in self.__modules:
                 for key, value in PTApp[module.name].items():
-                    setattr( module, key, value )
+                    setattr(module, key, value)
             # self.frame_map.canvas.scan_dragto(self.frame_map.centerX, self.frame_map.centerY)
-            self.frame_map.reload( mousex=self.frame_map.centerX, mousey=self.frame_map.centerY )
-            self.frame_map.web_list_handler( load=True )
-            self.route.update_list( self.frame_map.saves )
-            self.route.read_csv( None )
-
-    """
-    Depreciate method for pre-caching all GMB route websites for data mining
-    """
+            self.frame_map.reload(mousex=self.frame_map.centerX, mousey=self.frame_map.centerY)
+            self.frame_map.web_list_handler(load=True)
+            self.route.update_list(self.frame_map.saves)
+            self.route.read_csv(None)
 
     def load_api(self):
-        popup = api.ApiInput()
-        self.root.wait_window( popup )
-        print( popup.value )
-        self.frame_map.api = popup.value
+        popup = google_map_api.ApiInput()
+        self.root.wait_window(popup)
+        try:
+            if len(popup.value) > 20:
+                self.frame_map.api = popup.value
+        except AttributeError as e:
+            pass
 
+    """
+    Depreciate method for pre-caching all GMB route websites for data mining+
+    
     def gmb_archive(self):
-        import td_fetch_gmb
         tkinter.Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
         save = askdirectory(
             title="Select save directory" )  # show an "Open" dialog box and return the path to the selected file
@@ -113,6 +113,7 @@ class MainWindow( tkinter.Toplevel ):
         with open( savename, 'wb' ) as handle:
             pickle.dump( save, handle, protocol=pickle.HIGHEST_PROTOCOL )
         self.destroy()
+    """
 
     def import_routes(self):
         self.headway.clear()
@@ -120,7 +121,7 @@ class MainWindow( tkinter.Toplevel ):
 
     def handle_tab_changed(self, event):
         selection = event.widget.select()
-        tab = event.widget.tab( selection, "text" )
+        tab = event.widget.tab(selection, "text")
         if tab == 'log':
             self.log.log_insert()
 
@@ -132,58 +133,58 @@ class MainWindow( tkinter.Toplevel ):
             self.old_message = self.status['text']
             self.status['text'] = message
         else:
-            root.after( 5000 )
+            root.after(5000)
             self.status['text'] = self.old_message
 
     def __init__(self, parent):
-        tkinter.Toplevel.__init__( self, parent )
+        tkinter.Toplevel.__init__(self, parent)
         self.root = parent
         self.name = 'Mainwindow'
         self.width = 640
         self.height = 640
 
-        self.title( "PT" )
-        self.minsize( self.width + 170, self.height + 100 )
+        self.title("PT")
+        self.minsize(self.width + 170, self.height + 100)
         # self.window.maxsize(self.width + 200, self.height + 100)
 
         self.path = None
 
         self.filemenu = tkinter.Menu()
-        self.config( menu=self.filemenu )
-        self.menu1 = tkinter.Menu( self.filemenu, tearoff=0 )
-        self.menu1.add_command( label='Save As', command=lambda: self.save_as_work( True ) )
-        self.menu1.add_command( label='Save', command=lambda: self.save_as_work( False ), state=tkinter.DISABLED )
-        self.menu1.add_command( label='Load', command=self.loadwork )
+        self.config(menu=self.filemenu)
+        self.menu1 = tkinter.Menu(self.filemenu, tearoff=0)
+        self.menu1.add_command(label='Save As', command=lambda: self.save_as_work(True))
+        self.menu1.add_command(label='Save', command=lambda: self.save_as_work(False), state=tkinter.DISABLED)
+        self.menu1.add_command(label='Load', command=self.loadwork)
         self.menu1.add_separator()
-        self.menu1.add_command( label='API key', command=self.load_api )
-        self.filemenu.add_cascade( label='File', menu=self.menu1 )
+        self.menu1.add_command(label='API key', command=self.load_api)
+        self.filemenu.add_cascade(label='File', menu=self.menu1)
 
-        self.menu2 = tkinter.Menu( self.filemenu, tearoff=0 )
+        self.menu2 = tkinter.Menu(self.filemenu, tearoff=0)
         # self.menu2.add_command( label='Create GMB Archive', command=self.gmb_archive )
-        self.menu2.add_command( label='Import Routes', command=self.import_routes )
-        self.filemenu.add_cascade( label='Import', menu=self.menu2 )
+        self.menu2.add_command(label='Import Routes', command=self.import_routes)
+        self.filemenu.add_cascade(label='Import', menu=self.menu2)
 
-        self.tab_parent = ttk.Notebook( self, width=self.width, height=self.height )
+        self.tab_parent = ttk.Notebook(self, width=self.width, height=self.height)
 
-        self.frame_map = gui_frame_canvas.frame_canvas( self, self.tab_parent )
-        self.route = displayroutes( self, self.tab_parent )
-        self.headway = get_headway( self, self.tab_parent )
+        self.frame_map = gui_frame_canvas.frame_canvas(self, self.tab_parent)
+        self.route = displayroutes(self, self.tab_parent)
+        self.headway = GetHeadway(self, self.tab_parent)
 
         self.__modules = [self, self.frame_map, self.route, self.headway]
-        self.log = gui_logging.ShowLog( self, self.tab_parent )
+        self.log = gui_logging.ShowLog(self, self.tab_parent)
         # self.frame_map.pack()
 
-        self.tab_parent.add( self.log, text="log" )
-        self.tab_parent.add( self.frame_map, text="Map" )
-        self.tab_parent.add( self.route, text="Route" )
-        self.tab_parent.add( self.headway, text="Headway" )
+        self.tab_parent.add(self.log, text="log")
+        self.tab_parent.add(self.frame_map, text="Map")
+        self.tab_parent.add(self.route, text="Route")
+        self.tab_parent.add(self.headway, text="Headway")
 
-        self.tab_parent.select( 1 )
-        self.tab_parent.pack( expand=True, fill=tkinter.BOTH )
-        self.tab_parent.bind( "<<NotebookTabChanged>>", self.handle_tab_changed )
+        self.tab_parent.select(1)
+        self.tab_parent.pack(expand=True, fill=tkinter.BOTH)
+        self.tab_parent.bind("<<NotebookTabChanged>>", self.handle_tab_changed)
 
         style = ttk.Style()
-        style.theme_create( 'Cloud', settings={
+        style.theme_create('Cloud', settings={
             ".": {
                 "configure": {
                     "background": '#75b8c8',  # All colors except for active tab-button
@@ -206,19 +207,19 @@ class MainWindow( tkinter.Toplevel ):
 
                 }
             }
-        } )
-        style.theme_use( 'Cloud' )
-        style.configure( "red.Horizontal.TProgressbar", troughcolor='azure', background='#98FF98' )
+        })
+        style.theme_use('Cloud')
+        style.configure("red.Horizontal.TProgressbar", troughcolor='azure', background='#98FF98')
 
-        bottombar = tkinter.Frame( self, height=5 )
-        bottombar.pack( expand=False, fill=tkinter.X )
-        self.progress = ttk.Progressbar( bottombar, style="red.Horizontal.TProgressbar", orient=tkinter.HORIZONTAL,
-                                         length=300, mode='determinate' )
-        self.progress.pack( side='right' )
+        bottombar = tkinter.Frame(self, height=5)
+        bottombar.pack(expand=False, fill=tkinter.X)
+        self.progress = ttk.Progressbar(bottombar, style="red.Horizontal.TProgressbar", orient=tkinter.HORIZONTAL,
+                                        length=300, mode='determinate')
+        self.progress.pack(side='right')
 
-        self.status = tkinter.Label( bottombar, text='Awaiting Area of Interest', bg='white' )
+        self.status = tkinter.Label(bottombar, text='Awaiting Area of Interest', bg='white')
 
-        self.status.pack( side='left' )
+        self.status.pack(side='left')
 
         # self.frame_map.reload()
 
@@ -227,11 +228,11 @@ if __name__ == "__main__":
     root = tkinter.Tk()
     root.withdraw()
 
-    if api.load_api() is None:
-        popup = api.ApiInput()
-        root.wait_window( popup )
+    if google_map_api.load_api() is None:
+        popup = google_map_api.ApiInput()
+        root.wait_window(popup)
 
-    MainWindow( root )
+    MainWindow(root)
     root.mainloop()
 
 # for pyinstaller: https://github.com/pyinstaller/pyinstaller/issues/2137  ## install develop
