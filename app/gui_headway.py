@@ -5,10 +5,10 @@ from tkinter import ttk, messagebox
 
 import pandas as pd
 
+from app.gui_routes import treeview_sort_column
 from utils import ctb
 from utils import gmb_emobility
 from utils import kmb
-from app.gui_routes import treeview_sort_column
 
 
 class GetHeadway(tkinter.Frame):
@@ -104,22 +104,25 @@ class GetHeadway(tkinter.Frame):
             extra_loading = 3
         elif SP == 'kmb':
             routeSP = route[
-                (route['Service Provider'].str.contains('KMB')) | (route['Service Provider'].str.contains('LWB'))][
+                (route['Service Provider'].str.contains( 'KMB' )) | (route['Service Provider'].str.contains( 'LWB' ))][
                 'Route']
         else:
-            routeSP = route[route['Service Provider'].str.contains(SP.upper())]['Route']
-        print(routeSP)
-        routeSP = [str(i) for i in list(dict.fromkeys(routeSP))]
-        savename = os.path.join(self.window.frame_map.saves['dirname'],
-                                SP + '-' + self.am1.get() + '-' + self.pm1.get() + '.xlsx')
-        self.window.progress.config(maximum=len(routeSP) + extra_loading, value=0)
-        headway_data = getattr(self, SP)(routeSP, savename, self.window)
+            routeSP = route[route['Service Provider'].str.contains( SP.upper() )]['Route']
+        print( routeSP )
+        routeSP = [str( i ) for i in list( dict.fromkeys( routeSP ) )]
+        savename = os.path.join( self.window.frame_map.saves['dirname'],
+                                 SP + '-' + self.am1.get() + '-' + self.pm1.get() + '.xlsx' )
+        self.window.progress.config( maximum=len( routeSP ) + extra_loading, value=0 )
+        headway_data = getattr( self, SP )( routeSP, savename, self.window )
+        self.write_headway( headway_data )
+        self.window.progress['value'] = 0
+        self.window.cprint( str( len( headway_data ) ) + ' routes data retrieved' )
+        self.window.headway['cursor'] = 'arrow'
         return headway_data
 
     def kmb(self, routeSP, savename, progress):
         kmb_headway = kmb.main(routeSP, am1=self.am1.get(), am2=self.am2.get(), pm1=self.pm1.get(), pm2=self.pm2.get(),
                                savename=savename, window=progress)
-        self.write_headway(kmb_headway)
         return kmb_headway
 
     def gmb(self, routeSP, savename, progress):
@@ -132,29 +135,19 @@ class GetHeadway(tkinter.Frame):
                                                         pm1=self.pm1.get(),
                                                         pm2=self.pm2.get(), savename=savename, window=progress,
                                                         archive=self._archive)
-            self.write_headway(gmb_headway.PT)
             return gmb_headway.PT
 
     def ctb(self, routeSP, savename, progress):
         ctb_headway = ctb.main(routeSP, am1=self.am1.get(), am2=self.am2.get(), pm1=self.pm1.get(), pm2=self.pm2.get(),
                                savename=savename, window=progress)
-        self.write_headway(ctb_headway)
         return ctb_headway
 
     def write_headway(self, headway):
         self.bus_treeview.delete(*self.bus_treeview.get_children())
         for index, row in headway.iterrows():
-            route_id = index
-            route = row['route']
-            info = row['info']
-            headway_am = row['headway_am']
-            headway_pm = row['headway_pm']
-            bound = row['bound']
-            period_am = row['period_am']
-            period_pm = row['period_pm']
-            self.bus_treeview.insert('', 'end',
-                                     values=(
-                                     route_id, route, info, headway_am, headway_pm, bound, period_am, period_pm))
+            self.bus_treeview.insert( '', 'end',
+                                      values=(
+                                          index, *row) )
             self.window.progress.config(value=0)
 
     def clear(self):

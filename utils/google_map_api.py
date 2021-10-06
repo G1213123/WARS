@@ -45,11 +45,12 @@ class ApiInput(tkinter.Toplevel):
 
     def cleanup(self):
         self.value = self.e.get()
-        # create save config file directory
-        self.savename = DIRECTORY + r'/api.cfg'
-        # Create the file if it does not exist
-        with open(self.savename, 'wb') as handle:
-            pickle.dump(self.value, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        if self.value != "":
+            # create save config file directory
+            self.savename = DIRECTORY + r'/api.cfg'
+            # Create the file if it does not exist
+            with open( self.savename, 'wb' ) as handle:
+                pickle.dump( self.value, handle, protocol=pickle.HIGHEST_PROTOCOL )
         self.destroy()
 
 

@@ -13,8 +13,8 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 from app import gui_frame_canvas
 from app import gui_logging
 from app.gui_headway import GetHeadway
-from utils import google_map_api
 from app.gui_routes import displayroutes
+from utils import google_map_api
 
 
 # for pyinstaller exe packaging
@@ -90,7 +90,7 @@ class MainWindow(tkinter.Toplevel):
         popup = google_map_api.ApiInput()
         self.root.wait_window(popup)
         try:
-            if len(popup.value) > 20:
+            if popup.value != '':
                 self.frame_map.api = popup.value
         except AttributeError as e:
             pass
@@ -154,24 +154,33 @@ class MainWindow(tkinter.Toplevel):
         self.menu1 = tkinter.Menu(self.filemenu, tearoff=0)
         self.menu1.add_command(label='Save As', command=lambda: self.save_as_work(True))
         self.menu1.add_command(label='Save', command=lambda: self.save_as_work(False), state=tkinter.DISABLED)
-        self.menu1.add_command(label='Load', command=self.loadwork)
+        self.menu1.add_command( label='Load', command=self.loadwork )
         self.menu1.add_separator()
-        self.menu1.add_command(label='API key', command=self.load_api)
-        self.filemenu.add_cascade(label='File', menu=self.menu1)
+        self.menu1.add_command( label='API key', command=self.load_api )
+        self.filemenu.add_cascade( label='File', menu=self.menu1 )
 
-        self.menu2 = tkinter.Menu(self.filemenu, tearoff=0)
+        self.menu2 = tkinter.Menu( self.filemenu, tearoff=0 )
         # self.menu2.add_command( label='Create GMB Archive', command=self.gmb_archive )
-        self.menu2.add_command(label='Import Routes', command=self.import_routes)
-        self.filemenu.add_cascade(label='Import', menu=self.menu2)
+        self.menu2.add_command( label='Import Routes', command=self.import_routes )
+        self.filemenu.add_cascade( label='Import', menu=self.menu2 )
 
-        self.tab_parent = ttk.Notebook(self, width=self.width, height=self.height)
+        # Bottom bar holding status description and progress bar
+        bottombar = tkinter.Frame( self, height=5 )
+        bottombar.pack( expand=False, fill=tkinter.X, side=tkinter.BOTTOM )
+        self.progress = ttk.Progressbar( bottombar, style="red.Horizontal.TProgressbar", orient=tkinter.HORIZONTAL,
+                                         length=300, mode='determinate' )
+        self.progress.pack( side='right' )
+        self.status = tkinter.Label( bottombar, text='Awaiting Area of Interest', bg='white' )
+        self.status.pack( side='left' )
 
-        self.frame_map = gui_frame_canvas.frame_canvas(self, self.tab_parent)
-        self.route = displayroutes(self, self.tab_parent)
-        self.headway = GetHeadway(self, self.tab_parent)
+        self.tab_parent = ttk.Notebook( self, width=self.width, height=self.height )
+
+        self.frame_map = gui_frame_canvas.frame_canvas( self, self.tab_parent )
+        self.route = displayroutes( self, self.tab_parent )
+        self.headway = GetHeadway( self, self.tab_parent )
 
         self.__modules = [self, self.frame_map, self.route, self.headway]
-        self.log = gui_logging.ShowLog(self, self.tab_parent)
+        self.log = gui_logging.ShowLog( self, self.tab_parent )
         # self.frame_map.pack()
 
         self.tab_parent.add(self.log, text="log")
@@ -210,16 +219,6 @@ class MainWindow(tkinter.Toplevel):
         })
         style.theme_use('Cloud')
         style.configure("red.Horizontal.TProgressbar", troughcolor='azure', background='#98FF98')
-
-        bottombar = tkinter.Frame(self, height=5)
-        bottombar.pack(expand=False, fill=tkinter.X)
-        self.progress = ttk.Progressbar(bottombar, style="red.Horizontal.TProgressbar", orient=tkinter.HORIZONTAL,
-                                        length=300, mode='determinate')
-        self.progress.pack(side='right')
-
-        self.status = tkinter.Label(bottombar, text='Awaiting Area of Interest', bg='white')
-
-        self.status.pack(side='left')
 
         # self.frame_map.reload()
 

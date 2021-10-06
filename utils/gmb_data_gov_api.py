@@ -82,7 +82,6 @@ class gmb_get_headway:
                 self.window.progress['value'] += 1
                 self.window.cprint('retriving headway data of route ' + self.j)
                 self.window.update()
-        if self.window: self.window.headway['cursor'] = 'arrow'
         self.PT.to_csv(savename)
 
 

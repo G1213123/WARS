@@ -123,12 +123,3 @@ class SaveSetting(tkinter.Toplevel):
             for key, value in save_settings[module.name].items():
                 if key != 'aoi_nos':
                     setattr(module, key, value)
-
-    def load_api(self):
-        savename = os.path.expanduser('~/Documents/Python_Scripts/WARS/cfg/api.cfg')
-        try:
-            with open(savename, 'rb') as handle:
-                self.api = pickle.load(handle)
-        except (OSError, IOError) as e:
-            return 1
-        return 0

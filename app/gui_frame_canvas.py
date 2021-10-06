@@ -9,10 +9,10 @@ import numpy as np
 import requests
 from shapely.geometry import Point, Polygon
 
-from utils import google_map_api
+from app import gui_popups
 from utils import combine_routes
 from utils import data_gov
-from app import gui_popups
+from utils import google_map_api
 from utils import read_html
 
 
@@ -174,10 +174,12 @@ class frame_canvas(tkinter.Frame):
         Returns: image of tkinter.PhotoImage
 
         """
-        address = self.getaddress(self.lat, self.lng)
-        r = self.s.get(address)
-        base64data = base64.encodebytes(r.content)
-        image = tkinter.PhotoImage(data=base64data)
+        address = self.getaddress( self.lat, self.lng )
+        r = self.s.get( address )
+        base64data = base64.encodebytes( r.content )
+        image = tkinter.PhotoImage( data=base64data )
+        self.window.cprint( 'Map Loaded' )
+        self.window.update()
         return image
 
     def create_grid(self, event=None):
@@ -257,13 +259,13 @@ class frame_canvas(tkinter.Frame):
 
     def close_polygon(self):
         """
-        draw connecting line from end point to starting point and call aoi function close_polygon
+        draw connecting line from ending point to starting point and call aoi function close_polygon
 
         Returns: None
 
         """
-        self.canvas.create_line(*self.rev_FX(*self.aoi[-1].point[0]),
-                                *self.rev_FX(*self.aoi[-1].point[-1]))
+        self.canvas.create_line( *self.rev_FX( *self.aoi[-1].point[0] ),
+                                 *self.rev_FX( *self.aoi[-1].point[-1] ) )
         self.aoi[-1].close_polygon()
 
     def label_circle(self):
@@ -310,32 +312,37 @@ class frame_canvas(tkinter.Frame):
                                mousey)
         self.lat = new_location['lat']
         self.lng = new_location['lng']
-        self.centerX = self.canvas.canvasx(320)
-        self.centerY = self.canvas.canvasy(320)
-        bottom_left = self.FX(self.lat, self.lng, self.zoom, self.centerX, self.centerY, self.canvas.canvasx(0),
-                              self.canvas.canvasy(0))
-        top_right = self.FX(self.lat, self.lng, self.zoom, self.centerX, self.centerY, self.canvas.canvasx(640),
-                            self.canvas.canvasy(640))
+        self.centerX = self.canvas.canvasx( 320 )
+        self.centerY = self.canvas.canvasy( 320 )
+        bottom_left = self.FX( self.lat, self.lng, self.zoom, self.centerX, self.centerY, self.canvas.canvasx( 0 ),
+                               self.canvas.canvasy( 0 ) )
+        top_right = self.FX( self.lat, self.lng, self.zoom, self.centerX, self.centerY, self.canvas.canvasx( 640 ),
+                             self.canvas.canvasy( 640 ) )
         self.maxlat = bottom_left['lat']
         self.minlng = bottom_left['lng']
         self.minlat = top_right['lat']
         self.maxlng = top_right['lng']
+        try:
+            self.mapimage = self.getmap()  # set image to widget reference, see:
+            # http://effbot.org/pyfaq/why-do-my-tkinter-images-not-appear.htm
+            self.canvas.delete( 'all' )
+            self.canvas.create_image( self.canvas.canvasx( 0 ), self.canvas.canvasy( 0 ), image=self.mapimage,
+                                      anchor=tkinter.NW,
+                                      tags="map" )
+        except tkinter.TclError as e:
+            self.canvas.delete( 'all' )
+            self.window.cprint( 'Google Map Loading Failed, please check API setting' )
+            self.window.update()
 
-        self.mapimage = self.getmap()  # set image to widget reference, see:
-        # http://effbot.org/pyfaq/why-do-my-tkinter-images-not-appear.htm
-        self.canvas.delete('all')
-        self.canvas.create_image(self.canvas.canvasx(0), self.canvas.canvasy(0), image=self.mapimage,
-                                 anchor=tkinter.NW,
-                                 tags="map")
-        scale = 156543.03392 * math.cos(self.lat * math.pi / 180) / math.pow(2, self.zoom)
+        scale = 156543.03392 * math.cos( self.lat * math.pi / 180 ) / math.pow( 2, self.zoom )
         for marker in self.aoi:
             if marker.type == 'Circle':
                 size = marker.radius / scale
 
-                x, y = self.rev_FX(*marker.point[0])
-                self.canvas.create_oval(x - size, y - size, x + size, y + size, width=2)
+                x, y = self.rev_FX( *marker.point[0] )
+                self.canvas.create_oval( x - size, y - size, x + size, y + size, width=2 )
                 if self.showlbl:
-                    self.canvas.create_text(x, y,
+                    self.canvas.create_text( x, y,
                                             text='#%s\nlat=%s\nlon=%s\nradius=%s' % (
                                                 marker.id, *marker.point[0], marker.radius),
                                             tags='CircleLabel')
@@ -402,8 +409,10 @@ class frame_canvas(tkinter.Frame):
         self.saves['saves'].clear()
 
         # prompt save setting for the processed routes
-        if len(self.aoi) > 1:
-            popup = gui_popups.SaveSetting(aoi_nos=len(self.aoi))
+        if len( self.aoi ) > 1:
+            popup = gui_popups.SaveSetting( aoi_nos=len( self.aoi ) )
+        else:
+            self.window.cprint( 'Please specify Area' )
 
         # check the return from save setting popup
         if popup.out['done'] > 0:
@@ -612,9 +621,10 @@ class frame_canvas(tkinter.Frame):
         self.canvas = tkinter.Canvas(self.frmCanvas, width=window.width, height=window.height)
         try:
             self.mapimage = self.getmap()
-            self.canvas.create_image(0, 0, image=self.mapimage, anchor=tkinter.NW, tags="map")
-        except tkinter.TclError:
-            pass
+            self.canvas.create_image( 0, 0, image=self.mapimage, anchor=tkinter.NW, tags="map" )
+        except tkinter.TclError as e:
+            self.window.cprint( 'Google Map Loading Failed, please check API setting' )
+            self.window.update()
         self.delta_org = [0, 0]
         self.canvas.bind("<Button-3>", self.canvasclick)
         self.canvas.bind('<ButtonPress-1>', self.move_from)

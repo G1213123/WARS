@@ -10,6 +10,7 @@ import re
 import urllib.request
 
 import pandas as pd
+
 from utils import general as gn
 
 
@@ -223,7 +224,6 @@ def main(route=None, **kwargs):
             window.cprint('retriving headway data of route ' + route[i])
             window.update()
         i = i + 1
-    window.headway['cursor'] = 'arrow'
     print(PT)
     print(PT.period_am)
     print(PT.headway_am)

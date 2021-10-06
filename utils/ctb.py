@@ -164,8 +164,6 @@ def main(route=None, **kwargs):
             window.progress['value'] += 1
             window.cprint('retriving headway data of route ' + i)
             window.update()
-
-    window.headway['cursor'] = 'arrow'
     print(PT)
     print(PT.headway_am)
     print(PT.period_am)
