@@ -635,4 +635,5 @@ class frame_canvas(tkinter.Frame):
         # self.create_grid()
         self.canvas.focus_set()
 
-        window.bind('<Return>', self.search)
+        window.bind( '<Return>', self.search )
+        self.reload()

@@ -20,7 +20,7 @@ import pandas as pd
 import requests
 from folium.plugins import MarkerCluster
 from geopy.distance import geodesic
-from shapely.geometry import Polygon, Point, asShape
+from shapely.geometry import Polygon, Point, shape
 
 COOKIES = dict(language='en')
 HEADERS = dict(referer='https://www.hkemobility.gov.hk/en/route-search/pt')
@@ -181,9 +181,9 @@ def get_stops(bbox, type):
     xhtml = r.text
 
     try:
-        stops = pd.DataFrame(json.loads(xhtml)['features'])
-        stops['geometry'] = stops['geometry'].apply(lambda x: asShape(x))
-        stops['geometry'] = stops['geometry'].apply(lambda z: Point(z.y, z.x))
+        stops = pd.DataFrame( json.loads( xhtml )['features'] )
+        stops['geometry'] = stops['geometry'].apply( lambda x: shape( x ) )
+        stops['geometry'] = stops['geometry'].apply( lambda z: Point( z.y, z.x ) )
     except KeyError:
         print("invalid string ", stops)
         return pd.DataFrame()
@@ -219,12 +219,12 @@ def routes_from_stops(stops, window=None):
         r = requests.get(url, cookies=COOKIES, headers=HEADERS)
         xhtml = r.text
         try:
-            route = pd.DataFrame(json.loads(xhtml)).iloc[:, 2:6]
-            route.set_axis(columns, axis=1, inplace=True)
+            route = pd.DataFrame( json.loads( xhtml ) ).iloc[:, 2:6]
+            route = route.set_axis( columns, axis=1 )
         except (json.decoder.JSONDecodeError, ValueError):
             print("invalid string ", xhtml)
             route = None
-        routes = routes.append(route)
+        routes = pd.concat( [routes, route] )
 
         # Assign Routes to corresponding stops
         bus = ['KMB', 'CTB', 'NWFB', 'NLB', 'LWB']
@@ -263,7 +263,7 @@ def routes_export_polygon_mode(polygon, savename='', show=False, window=None):
 
     stops = pd.DataFrame()
     for service in services_type:
-        stops = stops.append(get_stops(bbox, service), ignore_index=True)
+        stops = pd.concat( [stops, get_stops( bbox, service )], ignore_index=True )
 
     stops = stops[stops.apply(lambda x: catch_stops_in_polygon(x['geometry'], polygon), axis=1)]
     routes, stops = routes_from_stops(stops, window)

@@ -104,7 +104,7 @@ def main(route=None, **kwargs):
                 service = '0' + str(output1[j]['SERVICE_TYPE'])
                 schedule = pd.DataFrame(output['data'][service])
 
-                PT = PT.append(pd.Series(), ignore_index=True)
+                PT = pd.concat( [PT, pd.Series()], ignore_index=True )
                 PT.iloc[-1]['route'] = route[i].upper()
                 PT.iloc[-1]['bound'] = bound
                 ori = schedule.iloc[0]['Origin_Eng']

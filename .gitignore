@@ -252,6 +252,6 @@ cython_debug/
 cfg/
 
 #Test result
-tests/result
+tests/
 
 # End of https://www.toptal.com/developers/gitignore/api/python,pycharm

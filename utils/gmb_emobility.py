@@ -79,7 +79,7 @@ class gmb_get_headway:
         print(self.j)
         if self.window:
             self.window.headway['cursor'] = 'watch'
-            self.window.cprint('Connecting to CTB web service')
+            self.window.cprint( 'Connecting to eMobility' )
         for idx, val in enumerate(temp):
             if 'Mondays' in val:
                 period = temp[idx + 1]

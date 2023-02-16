@@ -55,7 +55,7 @@ def main(route=None, **kwargs):
 
     tango, savename = gn.read_route(route, savename)
 
-    url = 'https://mobile.nwstbus.com.hk/nwp3/printout1.php?code=X&l=1'
+    url = 'https://mobile.bravobus.com.hk/nwp3/printout1.php?code=X&l=1'
     try:
         raw_full_list = pd.read_html(url)
     except IncompleteRead as e:
@@ -76,18 +76,18 @@ def main(route=None, **kwargs):
         route_list = route_list.reset_index(drop=False)
 
         for index, row in route_list.iterrows():  # row=route_list.iloc[0]
-            PT = PT.append(pd.Series(), ignore_index=True)
-            PT.iloc[-1]['route', 'info'] = row['Route'], row['Route Information']
+            PT = pd.concat( [PT, pd.Series( 0 )], ignore_index=True )
+            PT.at[PT.index[-1], 'route'], PT.at[PT.index[-1], 'info'] = row['Route'], row['Route Information']
             trial = 0
             with requests.Session() as s:
                 if ssid == 0:
-                    url1 = 'https://mobile.nwstbus.com.hk/nwp3/index.php?golang=EN'
-                    r = s.get(url1)
+                    url1 = 'https://mobile.bravobus.com.hk/nwp3/index.php?golang=EN'
+                    r = s.get( url1 )
                     cookie = SimpleCookie()
-                    cookie.load(r.cookies)
+                    cookie.load( r.cookies )
                     # print(r.cookies)
-                    ssid = next(iter(cookie))
-                url2 = 'https://mobile.nwstbus.com.hk/nwp3/routesearch.php'
+                    ssid = next( iter( cookie ) )
+                url2 = 'https://mobile.bravobus.com.hk/nwp3/routesearch.php'
                 params = {'rtype': 'X', 'skey': 'Input%20Route%20No.', 'l': 1, 'savecookie': 0, 'ssid': ssid,
                           'sysid': 3}
                 while trial == 0:
@@ -100,7 +100,7 @@ def main(route=None, **kwargs):
                         continue
                     trial += 1
                     # t = IncompleteRead.partial
-                url3 = 'https://mobile.nwstbus.com.hk/nwp3/getvariance.php'
+                url3 = 'https://mobile.bravobus.com.hk/nwp3/getvariance.php'
                 params = {'lid': row['index'], 'cur': 0, 'l': 1, 'ssid': ssid}
                 try:
                     l = s.get(url3, params=params)
@@ -118,10 +118,10 @@ def main(route=None, **kwargs):
             else:
                 bound = 'O'
                 bound_txt = 0
-            PT.iloc[-1]['bound'] = bound_txt
+            PT.at[PT.index[-1], 'bound'] = bound_txt
             params = {'info': info, 'bound': bound, 'l': 1}
-            url = 'https://mobile.nwstbus.com.hk/nwp3/gettimetable.php'
-            r = s.get(url, params=params)
+            url = 'https://mobile.bravobus.com.hk/nwp3/gettimetable.php'
+            r = s.get( url, params=params )
             r.url
             m = pd.read_html(r.url)
             m.remove(m[0])
@@ -132,34 +132,37 @@ def main(route=None, **kwargs):
                     n = m[l + 1]
                     break
             add_text = m[-1][0][0]
-            PT.iloc[-1]['special'] = add_text
+            PT.at[PT.index[-1], 'special'] = add_text
 
             haveheadway = 0
             for index2, row2 in n.iterrows():  # row2=n.iloc[0]
                 if '-' in row2[0]:
                     row2 = split_period(row2)
-                    if gn.time_in_period(row2['StartTime'], row2['EndTime'], am1, am2):
-                        PT.iloc[-1]['headway_am'] = (row2[1])
-                        PT.iloc[-1]['period_am'] = (row2[0])
-                    if gn.time_in_period(row2['StartTime'], row2['EndTime'], pm1, pm2):
-                        PT.iloc[-1]['headway_pm'] = (row2[1])
-                        PT.iloc[-1]['period_pm'] = (row2[0])
+                    if gn.time_in_period( row2['StartTime'], row2['EndTime'], am1, am2 ):
+                        PT.at[PT.index[-1], 'headway_am'] = (row2[1])
+                        PT.at[PT.index[-1], 'period_am'] = (row2[0])
+                    if gn.time_in_period( row2['StartTime'], row2['EndTime'], pm1, pm2 ):
+                        PT.at[PT.index[-1], 'headway_pm'] = (row2[1])
+                        PT.at[PT.index[-1], 'period_pm'] = (row2[0])
                         haveheadway = 1
                 elif haveheadway == 0:
                     peak_trip_am = []
                     peak_trip_pm = []
-                    for time_str in row2[0].split(', '):
-                        time = datetime.datetime.strptime(time_str, '%H:%M').time()
-                        if gn.time_in_period(time, time, am1, am2):
-                            peak_trip_am.append(time_str)
-                        if gn.time_in_period(time, time, pm1, pm2):
-                            peak_trip_pm.append(time_str)
+                    for time_str in row2[0].split( ', ' ):
+                        if ':' in time_str:
+                            time = datetime.datetime.strptime( time_str, '%H:%M' ).time()
+                        else:
+                            time = datetime.datetime.strptime( time_str, '%H%M' ).time()
+                        if gn.time_in_period( time, time, am1, am2 ):
+                            peak_trip_am.append( time_str )
+                        if gn.time_in_period( time, time, pm1, pm2 ):
+                            peak_trip_pm.append( time_str )
                     if len(peak_trip_am) > 0:
-                        PT.iloc[-1]['headway_am'] = ', '.join(peak_trip_am) + ' ' + str(
-                            len(peak_trip_am)) + p.plural(' trip', len(peak_trip_am))
+                        PT.at[PT.index[-1], 'headway_am'] = ', '.join( peak_trip_am ) + ' ' + str(
+                            len( peak_trip_am ) ) + p.plural( ' trip', len( peak_trip_am ) )
                     if len(peak_trip_pm) > 0:
-                        PT.iloc[-1]['headway_pm'] = ', '.join(peak_trip_pm) + ' ' + str(
-                            len(peak_trip_pm)) + p.plural(' trip', len(peak_trip_pm))
+                        PT.at[PT.index[-1], 'headway_pm'] = ', '.join( peak_trip_pm ) + ' ' + str(
+                            len( peak_trip_pm ) ) + p.plural( ' trip', len( peak_trip_pm ) )
         if window is not None:
             window.progress['value'] += 1
             window.cprint('retriving headway data of route ' + i)
