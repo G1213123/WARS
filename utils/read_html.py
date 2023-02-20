@@ -255,37 +255,20 @@ def catch_stops_in_polygon(stop, polygon, radius=500, point2=None):
         return False
 
 
-def routes_export_polygon_mode(polygon, savename='', show=False, window=None):
+def routes_export_polygon_mode(polygon, show=False, window=None):
     services_type = ['BUS', 'GMB']
 
-    polygongdf = gpd.GeoDataFrame(index=[0], geometry=[polygon], crs={'init': 'epsg:4326'})
+    polygongdf = gpd.GeoDataFrame( index=[0], geometry=[polygon], crs={'init': 'epsg:4326'} )
     bbox = polygongdf.total_bounds  # lat-long of 2 corners
 
     stops = pd.DataFrame()
     for service in services_type:
         stops = pd.concat( [stops, get_stops( bbox, service )], ignore_index=True )
 
-    stops = stops[stops.apply(lambda x: catch_stops_in_polygon(x['geometry'], polygon), axis=1)]
+    stops = stops[stops.apply( lambda x: catch_stops_in_polygon( x['geometry'], polygon ), axis=1 )]
     routes, stops = routes_from_stops(stops, window)
 
-    if savename == '':
-        # File path prompt
-        Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-        savename = asksaveasfilename(defaultextension=".csv", title="save file",
-                                     filetypes=(("comma seperated values", "*.csv"), ("all files", "*.*")))
-    routes.to_csv(savename)
-
-    # m = folium.Map( location=[x, y], zoom_start=20, tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    #                attr="<a href=https://github.com/G1213123/WARS>WARS</a>" )
-    # folium.Polygon( polygon.exterior.coords ).add_to( m )
-    # m.save( savename.replace( '.csv', '.html' ), 'a' )
-
-    map_html(stops=stops, aoi=polygon, radius=None, savename=savename.replace('.csv', '.html'))
-
-    if show:
-        webbrowser.open(savename.replace('.csv', '.html'))
-
-    return savename
+    return routes, stops
 
 
 def get_nearby_stops_html(y, x):
