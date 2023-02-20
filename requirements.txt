@@ -14,7 +14,6 @@ geographiclib
 geopandas
 geopy
 idna
-inflect
 Jinja2
 mapa
 MarkupSafe
