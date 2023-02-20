@@ -16,7 +16,6 @@ geopy
 idna
 inflect
 Jinja2
-lxml
 mapa
 MarkupSafe
 munch
