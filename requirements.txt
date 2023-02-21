@@ -110,7 +110,7 @@ python-json-logger==2.0.6
 python-utils==3.5.2
 pytz==2022.7.1
 pytz-deprecation-shim==0.1.0.post0
-pypiwin32==305
+pypiwin32
 pywin32-ctypes==0.2.0
 pywinpty==2.0.10
 PyYAML==6.0
