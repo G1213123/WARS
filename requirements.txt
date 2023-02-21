@@ -29,7 +29,7 @@ et-xmlfile==1.1.0
 executing==1.2.0
 fastjsonschema==2.16.2
 Fiona==1.9.1
-folium~=0.14.0
+folium
 fqdn==1.5.1
 geographiclib==2.0
 geojson==2.5.0
