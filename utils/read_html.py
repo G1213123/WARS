@@ -7,11 +7,7 @@ Created on Tue Sep 10 15:37:31 2019
 @author: Andrew.WF.Ng
 """
 import json
-import tkinter as tk
 import urllib.request
-import webbrowser
-from tkinter import *
-from tkinter.filedialog import asksaveasfilename
 
 import folium
 import geopandas as gpd
@@ -25,66 +21,6 @@ from shapely.geometry import Polygon, Point, shape
 COOKIES = dict(language='en')
 HEADERS = dict(referer='https://www.hkemobility.gov.hk/en/route-search/pt')
 
-
-class App:
-    """
-    Standalone interface for reading the HKeMobility web service
-    """
-
-    def __init__(self, master):
-        self.display_button_entry(master)
-        self.x = 960
-        # self.y=0
-
-    def setup_window(self, master):
-        self.f = tk.Frame(master, height=480, width=640, padx=10, pady=12)
-        self.f.pack_propagate(0)
-
-    def display_button_entry(self, master):
-        self.setup_window(master)
-        v = tk.StringVar()
-        self.e = tk.Entry(self.f, textvariable=v)
-        u = tk.StringVar()
-        self.d = tk.Entry(self.f, textvariable=u)
-        t = tk.StringVar()
-        self.c = tk.Entry(self.f, textvariable=t)
-        buttonA = tk.Button(self.f, text="Cancel", command=self.cancelbutton)
-        buttonB = tk.Button(self.f, text="OK", command=self.okbutton)
-        labelx = tk.Label(self.f, text='lat')
-        labely = tk.Label(self.f, text='lon')
-        labelr = tk.Label(self.f, text='radius')
-        # self.var1 = IntVar()
-        # self.var1.set(0)
-        # self.cbus = tk.Checkbutton(self.f, text="bus", variable=self.var1, onvalue=1, offvalue=0)
-
-        labelx.pack()
-        self.e.pack()
-        labely.pack()
-        self.d.pack()
-        labelr.pack()
-        self.c.pack()
-        buttonA.pack()
-        buttonB.pack()
-        # self.cbus.pack()
-        self.f.pack()
-
-    def cancelbutton(self):
-        print(self.e.get())
-        master.destroy()
-
-    def okbutton(self):
-        print(self.e.get())
-        print(self.d.get())
-        x = self.e.get()
-        y = self.d.get()
-        r = self.c.get()
-        # bus=self.var1
-        routes_export_circle_mode(x, y, r)
-        master.destroy()
-        return 0
-
-    def _close(self):
-        master.destroy()
 
 
 class map_html:
@@ -255,7 +191,7 @@ def catch_stops_in_polygon(stop, polygon, radius=500, point2=None):
         return False
 
 
-def routes_export_polygon_mode(polygon, show=False, window=None):
+def routes_export_polygon_mode(polygon):
     services_type = ['BUS', 'GMB']
 
     polygongdf = gpd.GeoDataFrame( index=[0], geometry=[polygon], crs={'init': 'epsg:4326'} )
@@ -266,7 +202,7 @@ def routes_export_polygon_mode(polygon, show=False, window=None):
         stops = pd.concat( [stops, get_stops( bbox, service )], ignore_index=True )
 
     stops = stops[stops.apply( lambda x: catch_stops_in_polygon( x['geometry'], polygon ), axis=1 )]
-    routes, stops = routes_from_stops(stops, window)
+    routes, stops = routes_from_stops( stops )
 
     return routes, stops
 
@@ -312,7 +248,7 @@ def html_to_table(xhtml, header=2):
     return routes
 
 
-def routes_export_circle_mode(x, y, radius, savename='', show=False):
+def routes_export_circle_mode(x, y, radius):
     """
     legacy route searching function by mannual input target location in lat lon format with search radius
     :param x: latitude of target
@@ -329,12 +265,6 @@ def routes_export_circle_mode(x, y, radius, savename='', show=False):
     stops = list(filter(lambda z: catch_stops_in_polygon(z, None, radius, Point(x, y)), stops))
     xx, stops = routes_from_stops(stops, None)
 
-    if savename == '':
-        # File path prompt
-        Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-        savename = asksaveasfilename(defaultextension=".csv", title="save file",
-                                     filetypes=(("comma seperated values", "*.csv"), ("all files", "*.*")))
-    routes.to_csv(savename)
 
     # m = folium.Map( location=[x, y], zoom_start=20, tiles='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     #                attr="<a href=https://github.com/G1213123/WARS>WARS</a>" )
@@ -344,15 +274,4 @@ def routes_export_circle_mode(x, y, radius, savename='', show=False):
 
     map_html(stops=stops, aoi=Point(x, y), radius=radius, savename=savename.replace('.csv', '.html'))
 
-    if show:
-        webbrowser.open(savename.replace('.csv', '.html'))
-
-    return savename
-
-
-if __name__ == "__main__":
-    master = tk.Tk()
-    master.title('Location')
-    master.resizable(width=tk.NO, height=tk.NO)
-    app = App(master)
-    master.mainloop()
+    return routes, stops
