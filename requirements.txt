@@ -11,7 +11,7 @@ backcall==0.2.0
 beautifulsoup4==4.11.2
 bleach==6.0.0
 blinker==1.5
-branca==0.6.0
+branca
 cachetools==5.3.0
 certifi==2022.12.7
 cffi==1.15.1
@@ -29,7 +29,7 @@ et-xmlfile==1.1.0
 executing==1.2.0
 fastjsonschema==2.16.2
 Fiona==1.9.1
-folium==0.14.0
+folium
 fqdn==1.5.1
 geographiclib==2.0
 geojson==2.5.0
@@ -128,7 +128,7 @@ snuggs==1.4.7
 soupsieve==2.4
 stack-data==0.6.2
 streamlit==1.18.1
-streamlit-folium==0.11.1
+streamlit-folium
 terminado==0.17.1
 tinycss2==1.2.1
 toml==0.10.2
