@@ -100,4 +100,5 @@ if __name__ == "__main__":
     if st.button( "Get Data" ):
         init_session_state( True )
         to_read_html( output )
+        st.experimental_rerun()
     show_results()
