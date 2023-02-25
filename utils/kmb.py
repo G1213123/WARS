@@ -18,8 +18,8 @@ from utils import general as gn
 
 def check_weekday(source_type, check_type):
     day_type = {'weekday': ['MF        ', 'MS        ', 'D         '],
-                'saturday': ['S         '],
-                'holiday': ['H         ']}
+                'saturday': ['S         ', 'D         '],
+                'holiday': ['H         ', 'D         ']}
     return source_type in day_type[check_type]
 
 
@@ -34,7 +34,7 @@ def split_period(row, bound_txt):
         if row['MinTime'] == '':
             row['EndTime'] = row[bound_txt]
         else:
-            row['EndTime'] = re.split( r'[-|/\s]', row[bound_txt] )[1][:5]
+            row['EndTime'] = re.split( r'[-|/\s]', row[bound_txt] )[-1]
         row['EndTime'] = datetime.datetime.strptime( row['EndTime'], '%H:%M' )
         row['EndTime'] = row['EndTime'].time()
     except ValueError:
@@ -48,6 +48,7 @@ def main(routes=None, **kwargs):
     period = kwargs.get( 'period', 1 )
     am2 = kwargs.get( 'am2', None )
     pm2 = kwargs.get( 'pm2', None )
+    progress = kwargs.get( 'progress', None )
     day_type = kwargs.get( 'day_type', 'weekday' )
 
     if am2 is None or pm2 is None:
@@ -83,6 +84,7 @@ def main(routes=None, **kwargs):
             min_headway2 = ' '
             freq1 = 0
             freq2 = 0
+            headway_am, headway_pm, period_am, period_pm = '', '', '', ''
 
             try:
                 bound = j['BOUND']
@@ -122,7 +124,8 @@ def main(routes=None, **kwargs):
                 else:
                     info = dest + ' - ' + ori
 
-                for index, row in schedule.iterrows():  # row=schedule.iloc[1]
+                for index, row in schedule.iterrows():
+                    # row=schedule.iloc[1]
                     try:
                         if 'day' in row['BoundText1']:
                             min_headway1 = 'Special route'
@@ -221,6 +224,8 @@ def main(routes=None, **kwargs):
 
             # print(i)
         i = i + 1
+        if progress is not None:
+            progress.progress( i / len( routes ), text=f'Fetching route {route} data' )
     print( PT )
     print( PT.period_am )
     print( PT.headway_am )

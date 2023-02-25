@@ -113,7 +113,7 @@ def v_spacer(height, sb=False) -> None:
 
 
 class GetHeadway():
-    def __init__(self):
+    def __init__(self, progress):
         self.columns = ['id', 'route', 'info', 'headway_am', 'headway_pm', 'bound', 'period_am', 'period_pm']
         times = ['am1', 'pm1', 'period', 'day_type']
         for t in times:
@@ -122,10 +122,11 @@ class GetHeadway():
         self.am2 = self.am2.time()
         self.pm2 = datetime.datetime.combine( datetime.date.today(), self.pm1 ) + datetime.timedelta( hours=period )
         self.pm2 = self.pm2.time()
+        self.progress = progress
 
     def kmb(self, routeSP):
-        kmb_headway = kmb.main( routeSP, am1=self.am1, am2=self.am2, pm1=self.pm1, pm2=self.pm2, day_type=self.day_type
-                                )
+        kmb_headway = kmb.main( routeSP, am1=self.am1, am2=self.am2, pm1=self.pm1, pm2=self.pm2, day_type=self.day_type,
+                                progress=self.progress )
         return kmb_headway
 
     def gmb(self, routeSP):
@@ -138,7 +139,7 @@ class GetHeadway():
 
     def ctb(self, routeSP):
         ctb_headway = ctb.main( routeSP, am1=self.am1, am2=self.am2, pm1=self.pm1, pm2=self.pm2,
-                                )
+                                progress=self.progress )
         return ctb_headway
 
 
@@ -161,9 +162,12 @@ def go_bus_web():
     print( routeSP )
     routeSP = [str( i ) for i in list( dict.fromkeys( routeSP ) )]
 
-    GH = GetHeadway()
+    progress_text = "Operation in progress. Please wait."
+    progress = st.progress( 0, text=progress_text )
+    GH = GetHeadway( progress )
     get_headway = getattr( GH, SP )
     headway_data = get_headway( routeSP )
+    progress.empty()
     return headway_data
 
 
@@ -219,8 +223,8 @@ if __name__ == "__main__":
 
                 if st.form_submit_button():
                     st.session_state['routes_data'] = go_bus_web()
-                if st.session_state['routes_data'] is not None:
-                    st.dataframe( st.session_state['routes_data'] )
+        if st.session_state['routes_data'] is not None:
+            st.dataframe( st.session_state['routes_data'] )
 
             with col2:
                 v_spacer( 10 )
