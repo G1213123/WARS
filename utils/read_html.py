@@ -101,14 +101,13 @@ def get_stops(bbox, type):
                    outputFormat='application/json',
                    bbox='%s,%s,%s,%s' % (bbox[1], bbox[0], bbox[3], bbox[2]) )
     r = requests.post( url, params=params, cookies=COOKIES, headers=HEADERS )
-    xhtml = r.text
+    xhtml = json.loads( r.text )
 
-    try:
-        stops = pd.DataFrame( json.loads( xhtml )['features'] )
+    if len( xhtml['features'] ) > 0:
+        stops = pd.DataFrame( xhtml['features'] )
         stops['geometry'] = stops['geometry'].apply( lambda x: shape( x ) )
         stops['geometry'] = stops['geometry'].apply( lambda z: Point( z.y, z.x ) )
-    except KeyError:
-        print( "invalid string ", stops )
+    else:
         return pd.DataFrame()
 
     return stops
@@ -192,10 +191,13 @@ def routes_export_polygon_mode(polygon):
     # Formatting
     stops = pd.concat( [stops['properties'].apply( pd.Series ), stops['BUS'], stops['GMB']], axis=1 )
     stops[' '] = ""  # padding for display
-    stops['STOP_ID'] = stops['STOP_ID'].apply( str )
-    stops['NAME'] = stops['NAME'].apply( html2text.html2text )
+    if 'STOP_ID' in stops.columns:
+        stops['STOP_ID'] = stops['STOP_ID'].apply( str )
+        stops['NAME'] = stops['NAME'].apply( html2text.html2text )
 
-    map_html( stops=stops, aoi=polygon, )
+        map_html( stops=stops, aoi=polygon, )
+    else:
+        stops = pd.DataFrame()
 
     return routes, stops
 
