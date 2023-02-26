@@ -100,10 +100,10 @@ class gmb_get_headway:
                     min_headway2 = ' '
                     freq1 = 0
                     freq2 = 0
-                    for t in temp[1:]:
-                        time = datetime.datetime.strptime(t, '%I:%M %p').time()
-                        if gn.time_in_period(time, time, self.am1,
-                                             self.am2):
+                    for t in temp[idx + 1:]:
+                        time = datetime.datetime.strptime( t, '%I:%M %p' ).time()
+                        if gn.time_in_period( time, time, self.am1,
+                                              self.am2 ):
                             freq1 += 1
                             min_headway1 += t
                             min_headway1 += ' '
@@ -140,36 +140,40 @@ class gmb_get_headway:
             print( j )
             f = SearchGMB( j, self.dist ).load_gmb_data()
             if f is not None:
-                html = requests.get( f ).text
-                soup = BeautifulSoup( html, 'html.parser' )
-                self.info = soup.find( "td", attrs={"class": "maincontent"} ).text
-                element = soup.find( text="Timetable" )
-                result = element.parent.parent.parent.parent.parent.parent.next_sibling
-                rows = result.find_all( 'tr' )[1:]
+                try:
+                    html = requests.get( f ).text
+                    soup = BeautifulSoup( html, 'html.parser' )
+                    self.info = soup.find( "td", attrs={"class": "maincontent"} ).text
+                    element = soup.find( text="Timetable" )
+                    result = element.parent.parent.parent.parent.parent.parent.next_sibling
+                    rows = result.find_all( 'tr' )[1:]
 
-                data = []
+                    data = []
 
-                for row in rows:  # row = rows[2]
-                    cols = row.find_all('td')
-                    childrens = cols[0].findChildren()
-                    a = ', '.join([x.name for x in childrens]) if len(childrens) > 0 else ''
-                    cols = [ele.text.strip() for ele in cols]
-                    cols.append(a)
-                    data.append(cols)
+                    for row in rows:  # row = rows[2]
+                        cols = row.find_all( 'td' )
+                        childrens = cols[0].findChildren()
+                        a = ', '.join( [x.name for x in childrens] ) if len( childrens ) > 0 else ''
+                        cols = [ele.text.strip() for ele in cols]
+                        cols.append( a )
+                        data.append( cols )
 
-                columns = data[0]
-                self.timetable = pd.DataFrame(data[1:], columns=columns)
-                circular = 0
-                if '' == self.timetable.columns[1]:
-                    circular = 1
-                elif 'Circular' in self.info:
-                    circular = 1
+                    columns = data[0]
+                    self.timetable = pd.DataFrame( data[1:], columns=columns )
+                    circular = 0
+                    if '' == self.timetable.columns[1]:
+                        circular = 1
+                    elif 'Circular' in self.info:
+                        circular = 1
 
-                for bound in range( 2 - circular ):
-                    if bound == 0:
-                        self.html_parse( bound )
-                    else:
-                        self.html_parse( 1 )
+                    for bound in range( 2 - circular ):
+                        if bound == 0:
+                            self.html_parse( bound )
+                        else:
+                            self.html_parse( 1 )
+                except requests.exceptions.InvalidURL as e:
+                    print( f.text + 'Invalid Url' )
+                    pass
 
             if self.progress:
                 self.progress.progress( i / len( tango ), text=f'Fetching route {j} data' )
