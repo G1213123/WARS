@@ -224,7 +224,7 @@ def main(routes=None, **kwargs):
 
             # print(i)
         i = i + 1
-        if progress is not None:
+        if progress:
             progress.progress( i / len( routes ), text=f'Fetching route {route} data' )
     print( PT )
     print( PT.period_am )

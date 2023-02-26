@@ -59,41 +59,41 @@ class gmb_get_headway:
     Extract gmb headway data from the html page
     """
 
-    def __init__(self, route, dist='n', savename=None, window=None, **kwargs):
+    def __init__(self, route, dist='n', progress=None, **kwargs):
         # all **kwargs keys will be initialized as class attributes
-        allowed_keys = {'am1', 'am2', 'pm1', 'pm2'}
+        allowed_keys = {'am1', 'am2', 'pm1', 'pm2', 'day_type'}
         # initialize all allowed keys to false
-        self.__dict__.update((key, False) for key in allowed_keys)
+        self.__dict__.update( (key, False) for key in allowed_keys )
         # and update the given keys by their given values
-        self.__dict__.update((key, value) for key, value in kwargs.items() if key in allowed_keys)
+        self.__dict__.update( (key, value) for key, value in kwargs.items() if key in allowed_keys )
         self.route = route
         self.dist = dist
-        self.savename = savename
-        self.window = window
+        self.progress = progress
         self.main()
         self.__dict__.update(kwargs)
 
     def html_parse(self, bound):
-        self.PT = self.PT.append(pd.Series(), ignore_index=True)
         temp = self.timetable.iloc[:, 0]
-        print(self.j)
-        if self.window:
-            self.window.headway['cursor'] = 'watch'
-            self.window.cprint( 'Connecting to eMobility' )
-        for idx, val in enumerate(temp):
-            if 'Mondays' in val:
+        print( self.j )
+        day_type = {'weekday': 'Monday',
+                    'saturday': 'Saturday',
+                    'holiday': 'Sunday'}
+        headway_am, headway_pm, period_am, period_pm = '', '', '', ''
+
+        for idx, val in enumerate( temp ):
+            if day_type[self.day_type] in val:
                 period = temp[idx + 1]
                 if '-' in period:
                     # handle when a frequency in a fixed time period was given
                     headway = self.timetable.iloc[idx + 1][2]
-                    p_start = datetime.datetime.strptime(period.split(' - ')[0], '%I:%M %p').time()
-                    p_end = datetime.datetime.strptime(period.split(' - ')[1], '%I:%M %p').time()
-                    if gn.time_in_period(p_start, p_end, self.am1, self.am2):
-                        self.PT.iloc[-1]['headway_am'] = headway
-                        self.PT.iloc[-1]['period_am'] = period
-                    if gn.time_in_period(p_start, p_end, self.pm1, self.pm2):
-                        self.PT.iloc[-1]['headway_pm'] = headway
-                        self.PT.iloc[-1]['period_pm'] = period
+                    p_start = datetime.datetime.strptime( period.split( ' - ' )[0], '%I:%M %p' ).time()
+                    p_end = datetime.datetime.strptime( period.split( ' - ' )[1], '%I:%M %p' ).time()
+                    if gn.time_in_period( p_start, p_end, self.am1, self.am2 ):
+                        headway_am = headway
+                        period_am = period
+                    if gn.time_in_period( p_start, p_end, self.pm1, self.pm2 ):
+                        headway_pm = headway
+                        period_pm = period
                 else:
                     # handle when a list of exact departure time was given
                     min_headway1 = ' '
@@ -107,46 +107,45 @@ class gmb_get_headway:
                             freq1 += 1
                             min_headway1 += t
                             min_headway1 += ' '
-                            self.PT.iloc[-1]['period_am'] = time
-                        if gn.time_in_period(time, time, self.pm1,
-                                             self.pm2):
+                            headway_am = min_headway1 + '(' + str( freq1 ) + [' trip only)', ' trips only)'][freq1 > 1]
+                            period_am = time
+                        if gn.time_in_period( time, time, self.pm1,
+                                              self.pm2 ):
                             freq2 += 1
                             min_headway2 += t
                             min_headway2 += ' '
-                            self.PT.iloc[-1]['period_pm'] = time
+                            headway_pm = min_headway2 + '(' + str( freq2 ) + [' trip only)', ' trips only)'][freq2 > 1]
+                            period_pm = time
 
-                    if freq1 == 1:
-                        self.PT.iloc[-1]['headway_am'] = min_headway1 + '(' + str(freq1) + ' trip only)'
-                    elif freq1 > 1:
-                        self.PT.iloc[-1]['headway_am'] = min_headway1 + '(' + str(freq1) + ' trips only)'
+                route = self.j
+                info = self.info.replace( '<->', '-' ).replace( '>', '-' ).upper()
+                if bound == 1:
+                    info = info.split( ' - ' )[1] + ' - ' + info.split( ' - ' )[0]
 
-                    if freq2 == 1:
-                        self.PT.iloc[-1]['headway_pm'] = min_headway2 + '(' + str(freq2) + ' trip only)'
-                    elif freq2 > 1:
-                        self.PT.iloc[-1]['headway_pm'] = min_headway2 + '(' + str(freq2) + ' trips only)'
-            self.PT.iloc[-1]['route'] = self.j
-            self.PT.iloc[-1]['info'] = self.info.replace('<->', '-')
-            self.PT.iloc[-1]['bound'] = bound
-
+                self.PT = pd.concat(
+                    [self.PT, pd.DataFrame(
+                        [[route, info, bound, headway_am, period_am, headway_pm, period_pm, self.day_type]],
+                        columns=self.columns )], ignore_index=True )
     # tango='88'
 
     def main(self):
-        tango, savename = gn.read_route(self.route, self.savename)
+        tango = self.route
+        self.columns = ['route', 'info', 'bound', 'headway_am', 'period_am', 'headway_pm', 'period_pm', 'day_type']
 
         self.PT = pd.DataFrame(
-            columns=['route', 'info', 'headway_am', 'headway_pm', 'bound', 'period_am', 'period_pm'])
+            columns=self.columns )
 
-        for j in tango:  # j='61S'
+        for i, j in enumerate( tango ):  # j='61S'
             self.j = j
-            print(j)
-            f = SearchGMB(j, self.dist).load_gmb_data()
+            print( j )
+            f = SearchGMB( j, self.dist ).load_gmb_data()
             if f is not None:
-                html = requests.get(f).text
-                soup = BeautifulSoup(html, 'html.parser')
-                self.info = soup.find("td", attrs={"class": "maincontent"}).text
-                element = soup.find(text="Timetable")
+                html = requests.get( f ).text
+                soup = BeautifulSoup( html, 'html.parser' )
+                self.info = soup.find( "td", attrs={"class": "maincontent"} ).text
+                element = soup.find( text="Timetable" )
                 result = element.parent.parent.parent.parent.parent.parent.next_sibling
-                rows = result.find_all('tr')[1:]
+                rows = result.find_all( 'tr' )[1:]
 
                 data = []
 
@@ -166,20 +165,14 @@ class gmb_get_headway:
                 elif 'Circular' in self.info:
                     circular = 1
 
-                for bound in range(2 - circular):
+                for bound in range( 2 - circular ):
                     if bound == 0:
-                        self.html_parse(bound)
+                        self.html_parse( bound )
                     else:
-                        self.html_parse(1)
+                        self.html_parse( 1 )
 
-                if self.window is not None:
-                    self.window.headway['cursor'] = 'watch'
-                    self.window.progress['value'] += 1
-                    self.window.cprint('retriving headway data of route ' + str(self.j))
-                    self.window.update()
-        if self.window:
-            self.window.headway['cursor'] = 'arrow'
-        self.PT.to_excel(savename)
+            if self.progress:
+                self.progress.progress( i / len( tango ), text=f'Fetching route {j} data' )
 
 
 if __name__ == "__main__":

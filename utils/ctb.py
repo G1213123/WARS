@@ -167,7 +167,7 @@ def main(routes=None, **kwargs):
                     [[route, route_info, bound_txt, headway_am, period_am, headway_pm, period_pm, day_type, add_text]],
                     columns=columns )], ignore_index=True )
 
-        if progress is not None:
+        if progress:
             progress.progress( i / len( routes ), text=f'Fetching route {route} data' )
 
     print( PT )

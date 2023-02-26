@@ -30,6 +30,17 @@ def init_session_state(reset=False):
             st.session_state[l] = False
 
 
+@st.cache_data
+def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode( 'utf-8' )
+
+
+def st_df_with_download(df, name):
+    st.dataframe( df )
+    st.download_button( 'Download', convert_df( df ), file_name=name + '.csv' if name[:-4] != '.csv' else name )
+
+
 def to_read_html(shapes_data):
     if len( shapes_data['all_drawings'] ) > 0:
         for i, marker in enumerate( shapes_data['all_drawings'] ):
@@ -48,18 +59,18 @@ def show_results():
         marker_name = 'Feature #' + str( i )
         st.info( marker_name )
         with st.expander( marker_name + ' Routes' ):
-            st.dataframe( df1 )
+            st_df_with_download( df1, marker_name + ' Routes' )
         with st.expander( marker_name + ' Stops' ):
-            st.dataframe( df2 )
+            st_df_with_download( df2, marker_name + ' Stops' )
 
     if len( st.session_state['routes'] ) > 0:
         st.info( 'All Feature Summary' )
         all_routes = pd.concat( st.session_state['routes'] ).drop_duplicates( ignore_index=True )
         all_stops = pd.concat( st.session_state['stops'] )
         with st.expander( 'All Routes' ):
-            st.dataframe( all_routes )
+            st_df_with_download( all_routes, 'All Routes' )
         with st.expander( 'All Stops' ):
-            st.dataframe( all_stops )
+            st_df_with_download( all_stops, 'All Stops' )
 
 
 def _show_map(center: List[float], zoom: int) -> folium.Map:
@@ -123,6 +134,7 @@ class GetHeadway():
         self.pm2 = datetime.datetime.combine( datetime.date.today(), self.pm1 ) + datetime.timedelta( hours=period )
         self.pm2 = self.pm2.time()
         self.progress = progress
+        self.dist = st.session_state['dist'][0].lower() if 'dist' in st.session_state else ''
 
     def kmb(self, routeSP):
         kmb_headway = kmb.main( routeSP, am1=self.am1, am2=self.am2, pm1=self.pm1, pm2=self.pm2, day_type=self.day_type,
@@ -130,15 +142,15 @@ class GetHeadway():
         return kmb_headway
 
     def gmb(self, routeSP):
-        gmb_headway = gmb_emobility.gmb_get_headway( routeSP, dist=self.variable2[:1].lower(),
+        gmb_headway = gmb_emobility.gmb_get_headway( routeSP, dist=self.dist, progress=self.progress,
+                                                     day_type=self.day_type,
                                                      am1=self.am1, am2=self.am2,
                                                      pm1=self.pm1,
-                                                     pm2=self.pm2,
-                                                     archive=self._archive )
+                                                     pm2=self.pm2, )
         return gmb_headway.PT
 
     def ctb(self, routeSP):
-        ctb_headway = ctb.main( routeSP, am1=self.am1, am2=self.am2, pm1=self.pm1, pm2=self.pm2,
+        ctb_headway = ctb.main( routeSP, am1=self.am1, am2=self.am2, pm1=self.pm1, pm2=self.pm2, day_type=self.day_type,
                                 progress=self.progress )
         return ctb_headway
 
@@ -205,29 +217,34 @@ if __name__ == "__main__":
     with tab2:
         col1, col2 = st.columns( [5, 1] )
         with col1:
-            with st.form( 'inputs' ):
-                feature_list = [x._name + '_' + str( i ) for i, x in enumerate( st.session_state['shapes'] )]
-                features = st.multiselect( 'Select the Feature for Headway data retrival', feature_list, feature_list,
-                                           key='feature_list' )
-                SP_list = ['KMB', 'CTB/NWFB', 'GMB']
-                SP = st.selectbox( 'Select the Service Provider Headway data retrival', ['KMB', 'CTB/NWFB', 'GMB'],
-                                   key='SP' )
-                col3, col4 = st.columns( [2, 2] )
-                with col3:
-                    am1 = st.time_input( 'AM Start', value=datetime.time( 7 ), key="am1",
-                                         disabled=st.session_state.disabled )
-                    pm1 = st.time_input( 'PM Start', value=datetime.time( 18 ), key="pm1",
-                                         disabled=st.session_state.disabled )
-                with col4:
-                    period = st.number_input( 'Period', min_value=1, max_value=4, value=1, key='period' )
+            feature_list = [x._name + '_' + str( i ) for i, x in enumerate( st.session_state['shapes'] )]
+            features = st.multiselect( 'Select the Feature for Headway data retrival', feature_list, feature_list,
+                                       key='feature_list' )
+            SP_list = ['KMB', 'CTB/NWFB', 'GMB']
+            SP = st.selectbox( 'Select the Service Provider for Headway data retrival', ['KMB', 'CTB/NWFB', 'GMB'],
+                               key='SP' )
+            col3, col4 = st.columns( [2, 2] )
+            with col3:
+                am1 = st.time_input( 'AM Start', value=datetime.time( 7 ), key="am1",
+                                     disabled=st.session_state.disabled )
+                pm1 = st.time_input( 'PM Start', value=datetime.time( 18 ), key="pm1",
+                                     disabled=st.session_state.disabled )
+            with col4:
+                period = st.number_input( 'Period', min_value=1, max_value=4, value=1, key='period' )
 
-                if st.form_submit_button():
-                    st.session_state['routes_data'] = go_bus_web()
-        if st.session_state['routes_data'] is not None:
-            st.dataframe( st.session_state['routes_data'] )
+        with col2:
+            if st.session_state['SP'] == 'GMB':
+                st.selectbox( 'Select District', ['Hong Kong', 'Kowloon', 'New Territories'], key='dist' )
+            else:
+                v_spacer( 6 )
 
-            with col2:
-                v_spacer( 10 )
-                st.markdown( "***" )
-                st.checkbox( '24 hours', on_change=switch_time_input_onoff, key='24hours' )
-                st.selectbox( 'Day Type', ['weekday', 'saturday', 'holiday'], key='day_type' )
+            st.selectbox( 'Day Type', ['weekday', 'saturday', 'holiday'], key='day_type' )
+            v_spacer( 2 )
+            st.checkbox( '24 hours', on_change=switch_time_input_onoff, key='24hours' )
+
+            st.markdown( "***" )
+            if st.button( 'Submit' ):
+                st.session_state['routes_data'] = go_bus_web()
+
+        if len( st.session_state['routes_data'] ) > 0:
+            st_df_with_download( st.session_state['routes_data'], 'routes_data' )
