@@ -64,7 +64,7 @@ def show_results():
             st_df_with_download( df2, marker_name + ' Stops' )
 
     if len( st.session_state['routes'] ) > 0:
-        st.info( 'All Feature Summary' )
+        st.info( 'All Features Summary' )
         all_routes = pd.concat( st.session_state['routes'] ).drop_duplicates( ignore_index=True )
         all_stops = pd.concat( st.session_state['stops'] )
         with st.expander( 'All Routes' ):
