@@ -154,17 +154,54 @@ class GetHeadway():
                                 progress=self.progress )
         return ctb_headway
 
+def all_day_breakfast(routes, SP, day_type, dist, progress):
+    """
+    Iterate the go_bus_web headway fetching operation for 24 hrs to get the daily variation
+    Iteration beginned from 0am and stepping with 2 1-hour period
+        (i.e. Iter 1: 0am-1am and 1am-2am,
+                Iter 2: 2am-3am and 3am-4am
+                    ...
+                    )
+    Subsequently combines all 2-hours periods to an all-day table
+    :return:
+    """
+    all_day_headway = pd.DataFrame( columns=['route', 'info', 'bound'] )
+    SP_functions = {'kmb': kmb.main,
+                    'ctb': ctb.main,
+                    'gmb': gmb_emobility.gmb_get_headway}
+
+    for hr in range( 0, 23, 2 ):
+        am1 = hr
+        am2 = hr + 1
+        pm1 = hr + 1
+        pm2 = hr + 2 if hr < 22 else 0
+        if SP != 'gmb':
+            period_headway = SP_functions[SP]( routes, am1=am1, am2=am2, pm1=pm1, pm2=pm2, day_type=day_type,
+                                               progress=progress )
+        else:
+            period_headway = SP_functions[SP]( routes, dist=dist, progress=progress,
+                                               day_type=day_type,
+                                               am1=am1, am2=am2,
+                                               pm1=pm1,
+                                               pm2=pm2, ).PT
+        period_headway = period_headway[['route', 'info', 'bound', 'headway_am', 'headway_pm']]
+        period_headway.columns = ['route', 'info', 'bound', str( hr ).rjust( 2, '0' ), str( hr + 1 ).rjust( 2, '0' ),
+                                  ]
+        if hr == 0:
+            all_day_headway = pd.merge( all_day_headway, period_headway, how='right' )
+        elif hr < 23:
+            all_day_headway = all_day_headway.join( period_headway.iloc[:, 3:5] )
+
+    return all_day_headway
 
 def go_bus_web():
     SP = st.session_state['SP'].lower().split( '/' )[0]
     feature_list = [int( x.split( '_' )[1] ) for x in st.session_state['feature_list']]
     routes = pd.concat( [st.session_state['routes'][i] for i in feature_list] )
-    extra_loading = 0
     if SP == 'ctb':
         routeSP = routes[
             (routes['Service Provider'].str.contains( 'CTB' )) | (routes['Service Provider'].str.contains( 'NWFB' ))][
             'Route']
-        extra_loading = 3
     elif SP == 'kmb':
         routeSP = routes[
             (routes['Service Provider'].str.contains( 'KMB' )) | (routes['Service Provider'].str.contains( 'LWB' ))][
@@ -176,9 +213,15 @@ def go_bus_web():
 
     progress_text = "Operation in progress. Please wait."
     progress = st.progress( 0, text=progress_text )
-    GH = GetHeadway( progress )
-    get_headway = getattr( GH, SP )
-    headway_data = get_headway( routeSP )
+    if st.session_state['24hours']:
+        headway_data = all_day_breakfast( routeSP, st.session_state['SP'].lower().split( '/' )[0],
+                                          st.session_state['day_type'],
+                                          st.session_state['dist'][0].lower() if 'dist' in st.session_state else '',
+                                          progress )
+    else:
+        GH = GetHeadway( progress )
+        get_headway = getattr( GH, SP )
+        headway_data = get_headway( routeSP )
     progress.empty()
     return headway_data
 
@@ -199,6 +242,8 @@ if __name__ == "__main__":
         for marker in st.session_state["markers"]:
             fg.add_child( marker )
         m = _show_map( center=st.session_state['center'], zoom=st.session_state['zoom'] )
+        if len( st.session_state["shapes"] ) == 0:
+            st.info( 'Draw the area with the polygon mode in left side panel of the map' )
         output = st_folium( m, key="init", width=1500, height=600, feature_group_to_add=fg,
                             center=st.session_state['center'],
                             zoom=st.session_state['zoom'] )
