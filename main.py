@@ -82,14 +82,16 @@ def _show_map(center: List[float], zoom: int) -> folium.Map:
     for s in st.session_state["shapes"]:
         fg2.add_child( s )
     fg1.add_child( mc )
+    l = folium.TileLayer( 'https://mapapi.geodata.gov.hk/gs/api/v1.0.0/xyz/label/hk/en/WGS84/{z}/{x}/{y}.png',
+                          attr='LandsD' )
     m = folium.Map(
         location=center,
         zoom_start=zoom,
         control_scale=True,
-        tiles="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        attr='Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
-        # noqa: E501
+        tiles="https://mapapi.geodata.gov.hk/gs/api/v1.0.0/xyz/basemap/WGS84/{z}/{x}/{y}.png",
+        attr='<u target="_blank" class="copyrightDiv">&copy; The Government of the Hong Kong SAR</u><div style="width:28px;height:28px;display:inline-flex;background:url(https://api.hkmapservice.gov.hk/mapapi/landsdlogo.jpg);background-size:28px;"></div>'
     )
+    l.add_to( m )
     mc.add_to( (m) )
     fg2.add_to( m )
     Draw(
