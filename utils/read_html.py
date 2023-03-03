@@ -6,6 +6,7 @@ Created on Tue Sep 10 15:37:31 2019
 
 @author: Andrew.WF.Ng
 """
+import functools
 import json
 import urllib.request
 
@@ -21,6 +22,24 @@ from shapely.geometry import Polygon, Point, shape
 
 COOKIES = dict( language='en' )
 HEADERS = dict( referer='https://www.hkemobility.gov.hk/en/route-search/pt' )
+
+
+def splitter(s, n):
+    def helper(acc, v):
+        tmp1 = acc[-1]
+        tmp2 = len( tmp1 )
+        if tmp2 >= n or tmp2 + len( v ) >= n:
+            acc.append( v )
+        else:
+            acc[-1] = tmp1 + ',' + v
+
+        return acc
+
+    tmp1 = s.split( ',' )
+    if len( tmp1 ) == 1:
+        return tmp1
+
+    return list( functools.reduce( helper, tmp1[1:], [tmp1[0]] ) )
 
 
 class map_html:
@@ -47,8 +66,10 @@ class map_html:
                         html='<b>#' + str( b_stop['STOP_ID'] ) + '</b><br><font size="4">'
                              + b_stop['NAME']
                              + '</font><br><i> lat=%s lon=%s </i>' % (b_stop.bbox[1], b_stop.bbox[0])
-                             + '<br><font size="2"><b>%s (%s): </b>%s' % (
-                                 type, b_stop[type].count( ',' ) + 1, b_stop[type]) + '</font>', max_width=1500 )
+                             + '<br><font size="2"><b>%s (%s): </b><br>' % (
+                                 type, b_stop[type].count( ',' ) + 1)
+                             + '<br>'.join( splitter( b_stop[type], 48 ) ) +
+                             '</font>', max_width=1500 )
                     st.session_state['markers'].append(
                         folium.Marker( location=[b_stop.bbox[1], b_stop.bbox[0]], radius=5,
                                        popup=description, icon=folium.Icon( color=color ) ) )
@@ -60,11 +81,11 @@ class map_html:
         if isinstance( self.aoi, Polygon ):
             loc_list = list( self.aoi.exterior.coords )
             st.session_state['shapes'].append(
-                folium.Polygon( loc_list, color='#3186cc', fill_color='#3186cc' ) )
+                folium.Polygon( loc_list, color='#3186cc', fill_color='#3186cc', popup=f"Feature #{self.id}" ) )
         elif isinstance( self.aoi, Point ):
             st.session_state['shapes'].append(
                 folium.Circle( [self.aoi.x, self.aoi.y], radius=self.radius, color='#3186cc',
-                               fill_color='#3186cc' ) )
+                               fill_color='#3186cc', popup=f"Feature #{self.id}" ) )
         # popup=str( self.radius ) + 'm lat=%s lon=%s' % (self.aoi.x, self.aoi.y),
 
 
@@ -195,7 +216,6 @@ def routes_export_polygon_mode(polygon):
         stops['STOP_ID'] = stops['STOP_ID'].apply( str )
         stops['NAME'] = stops['NAME'].apply( html2text.html2text )
 
-        map_html( stops=stops, aoi=polygon, )
     else:
         stops = pd.DataFrame()
 

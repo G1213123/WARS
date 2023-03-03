@@ -21,7 +21,7 @@ if "zoom" not in st.session_state:
 
 def init_session_state(reset=False):
     _list1 = ['routes', 'stops', 'markers', 'shapes', 'routes_data']
-    _list2 = ['disabled']
+    _list2 = ['disabled', 'map_html']
     for l in _list1:
         if l not in st.session_state or reset:
             st.session_state[l] = []
@@ -47,8 +47,10 @@ def to_read_html(shapes_data):
             marker_name = marker['type'] + ' #' + str( i )
             s = st.info( 'Retriving routes in ' + marker_name )
             coordinates = [x[::-1] for x in marker['geometry']['coordinates'][0]]
+            polygon = Polygon( coordinates )
             routes, stops = read_html.routes_export_polygon_mode( Polygon( coordinates ) )
 
+            read_html.map_html( stops=stops, aoi=polygon, id=i )
             st.session_state['routes'].append( routes )
             st.session_state['stops'].append( stops )
             s.empty()
@@ -74,16 +76,6 @@ def show_results():
 
 
 def _show_map(center: List[float], zoom: int) -> folium.Map:
-    fg1 = folium.FeatureGroup( name="Markers" )
-    fg2 = folium.FeatureGroup( name="Shapes" )
-    mc = MarkerCluster( disableClusteringAtZoom=16 )
-    for marker in st.session_state["markers"]:
-        marker.add_to( mc )
-    for s in st.session_state["shapes"]:
-        fg2.add_child( s )
-    fg1.add_child( mc )
-    l = folium.TileLayer( 'https://mapapi.geodata.gov.hk/gs/api/v1.0.0/xyz/label/hk/en/WGS84/{z}/{x}/{y}.png',
-                          attr='LandsD' )
     m = folium.Map(
         location=center,
         zoom_start=zoom,
@@ -91,9 +83,10 @@ def _show_map(center: List[float], zoom: int) -> folium.Map:
         tiles="https://mapapi.geodata.gov.hk/gs/api/v1.0.0/xyz/basemap/WGS84/{z}/{x}/{y}.png",
         attr='<u target="_blank" class="copyrightDiv">&copy; The Government of the Hong Kong SAR</u><div style="width:28px;height:28px;display:inline-flex;background:url(https://api.hkmapservice.gov.hk/mapapi/landsdlogo.jpg);background-size:28px;"></div>'
     )
-    l.add_to( m )
-    mc.add_to( (m) )
-    fg2.add_to( m )
+
+    folium.TileLayer( 'https://mapapi.geodata.gov.hk/gs/api/v1.0.0/xyz/label/hk/en/WGS84/{z}/{x}/{y}.png',
+                      attr='LandsD' ).add_to( m )
+
     Draw(
         export=False,
         position="topleft",
@@ -107,6 +100,22 @@ def _show_map(center: List[float], zoom: int) -> folium.Map:
             "rectangle": True,
         },
     ).add_to( m )
+
+    fg1 = folium.FeatureGroup( name="Markers" )
+    fg2 = folium.FeatureGroup( name="Shapes" )
+    mc = MarkerCluster( disableClusteringAtZoom=16 )
+
+    for s in st.session_state["shapes"]:
+        fg2.add_child( s )
+    for marker in st.session_state["markers"]:
+        marker.add_to( mc )
+
+    fg1.add_to( m )
+    fg2.add_to( m )
+    fg1.add_child( mc )
+
+    st.session_state['map_html'] = m._repr_html_()
+
     return m
 
 
@@ -156,6 +165,7 @@ class GetHeadway():
                                 progress=self.progress )
         return ctb_headway
 
+
 def all_day_breakfast(routes, SP, day_type, dist, progress):
     """
     Iterate the go_bus_web headway fetching operation for 24 hrs to get the daily variation
@@ -195,6 +205,7 @@ def all_day_breakfast(routes, SP, day_type, dist, progress):
             all_day_headway = all_day_headway.join( period_headway.iloc[:, 3:5] )
 
     return all_day_headway
+
 
 def go_bus_web():
     SP = st.session_state['SP'].lower().split( '/' )[0]
@@ -240,13 +251,10 @@ if __name__ == "__main__":
     tab1, tab2 = st.tabs( ["🗺️ Map", "⏳ Headway"] )
 
     with tab1:
-        fg = folium.FeatureGroup( name="Markers" )
-        for marker in st.session_state["markers"]:
-            fg.add_child( marker )
         m = _show_map( center=st.session_state['center'], zoom=st.session_state['zoom'] )
         if len( st.session_state["shapes"] ) == 0:
             st.info( 'Draw the area with the polygon mode in left side panel of the map' )
-        output = st_folium( m, key="init", width=1500, height=600, feature_group_to_add=fg,
+        output = st_folium( m, key="init", width=1500, height=600,
                             center=st.session_state['center'],
                             zoom=st.session_state['zoom'] )
         if st.button( "Get Data" ):
@@ -259,6 +267,8 @@ if __name__ == "__main__":
                 st.experimental_rerun()
             else:
                 st.error( 'No area marked in the map' )
+        st.download_button( 'Download Map', data=st.session_state['map_html'],
+                            file_name='Stops_Map_' + str( datetime.date.today() ) + '.html' )
         show_results()
 
     with tab2:
