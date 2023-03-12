@@ -247,8 +247,7 @@ if __name__ == "__main__":
         initial_sidebar_state="expanded",
     )
 
-    st.markdown(
-        "# WARS - Transit Master<br>WEB AUTOMATIC ROUTES SCRAPPING<br><i>for Transit Services in Hong Kong</i>" )
+    st.markdown( "# WARS - Transit Master\nWEB AUTOMATIC ROUTES SCRAPPER - *for Transit Services in Hong Kong*" )
 
     init_session_state()
     tab1, tab2 = st.tabs( ["🗺️ Map", "⏳ Headway"] )
