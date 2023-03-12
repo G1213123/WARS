@@ -241,11 +241,14 @@ def go_bus_web():
 
 if __name__ == "__main__":
     st.set_page_config(
-        page_title="mapa",
+        page_title="WARS transit master",
         page_icon="🌍",
         layout="wide",
         initial_sidebar_state="expanded",
     )
+
+    st.markdown(
+        "# WARS - Transit Master<br>WEB AUTOMATIC ROUTES SCRAPPING<br><i>for Transit Services in Hong Kong</i>" )
 
     init_session_state()
     tab1, tab2 = st.tabs( ["🗺️ Map", "⏳ Headway"] )
