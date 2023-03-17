@@ -1,11 +1,14 @@
 import datetime
+import json
 from typing import List
 
 import folium
 import pandas as pd
+import pyproj
 import streamlit as st
 from folium.plugins import Draw, MarkerCluster
 from shapely.geometry import Polygon
+from shapely.ops import transform
 from streamlit_folium import st_folium
 
 from utils import read_html, kmb, ctb, gmb_emobility
@@ -20,7 +23,7 @@ if "zoom" not in st.session_state:
 
 
 def init_session_state(reset=False):
-    _list1 = ['routes', 'stops', 'markers', 'shapes', 'routes_data']
+    _list1 = ['routes', 'stops', 'markers', 'shapes', 'routes_data', 'features']
     _list2 = ['disabled', 'map_html']
     for l in _list1:
         if l not in st.session_state or reset:
@@ -51,6 +54,7 @@ def to_read_html(shapes_data):
             routes, stops = read_html.routes_export_polygon_mode( Polygon( coordinates ) )
 
             read_html.map_html( stops=stops, aoi=polygon, id=i )
+            st.session_state['features'].append( polygon )
             st.session_state['routes'].append( routes )
             st.session_state['stops'].append( stops )
             s.empty()
@@ -166,6 +170,27 @@ class GetHeadway():
         return ctb_headway
 
 
+def find_district(shape):
+    with open( 'src/DCD.json', encoding='utf-8' ) as f:
+        data = json.load( f )
+
+    wgs84 = pyproj.CRS( 'EPSG:4326' )
+    hkgrid = pyproj.CRS( 'EPSG:2326' )
+
+    project = pyproj.Transformer.from_crs( hkgrid, wgs84, always_xy=True ).transform
+    for i, f in enumerate( data['features'] ):
+        polygon = transform( project, Polygon( f['geometry']['coordinates'][0] ) )
+        polygon = transform( lambda x, y, z: (y, x), polygon )
+        if shape.intersection( polygon ):
+            dist_ID = ord( f['properties']['AREA_ID'] ) - ord( 'A' ) + 1
+            if dist_ID < 5:
+                return ['Hong Kong', 'Kowloon', 'New Territories']
+            elif dist_ID > 10:
+                return ['New Territories', 'Hong Kong', 'Kowloon']
+            else:
+                return ['Kowloon', 'New Territories', 'Hong Kong']
+
+
 def all_day_breakfast(routes, SP, day_type, dist, progress):
     """
     Iterate the go_bus_web headway fetching operation for 24 hrs to get the daily variation
@@ -277,8 +302,11 @@ if __name__ == "__main__":
         col1, col2 = st.columns( [5, 1] )
         with col1:
             feature_list = [x._name + '_' + str( i ) for i, x in enumerate( st.session_state['shapes'] )]
-            features = st.multiselect( 'Select the Feature for Headway data retrival', feature_list, feature_list,
-                                       key='feature_list' )
+            features_selected = st.multiselect( 'Select the Feature for Headway data retrival', feature_list,
+                                                feature_list,
+                                                key='feature_list' )
+            features = [st.session_state['features'][int( i.split( '_' )[1] )] for i in features_selected] if len(
+                features_selected ) > 0 else []
             SP_list = ['KMB', 'CTB/NWFB', 'GMB']
             SP = st.selectbox( 'Select the Service Provider for Headway data retrival', ['KMB', 'CTB/NWFB', 'GMB'],
                                key='SP' )
@@ -293,7 +321,8 @@ if __name__ == "__main__":
 
         with col2:
             if st.session_state['SP'] == 'GMB':
-                st.selectbox( 'Select District', ['Hong Kong', 'Kowloon', 'New Territories'], key='dist' )
+                options = find_district( features[0] )
+                st.selectbox( 'Select District', options, key='dist' )
             else:
                 v_spacer( 6 )
 

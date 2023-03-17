@@ -171,8 +171,8 @@ class gmb_get_headway:
                             self.html_parse( bound )
                         else:
                             self.html_parse( 1 )
-                except requests.exceptions.InvalidURL as e:
-                    print( f.text + 'Invalid Url' )
+                except:
+                    print( 'Invalid Url' )
                     pass
 
             if self.progress:
