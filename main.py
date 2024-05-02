@@ -16,15 +16,14 @@ from utils import read_html, kmb, ctb, gmb_emobility
 CENTER_START = [22.302711, 114.177216]
 ZOOM_START = 16
 
-if "center" not in st.session_state:
-    st.session_state["center"] = [22.302711, 114.177216]
-if "zoom" not in st.session_state:
-    st.session_state["zoom"] = 11
-
 
 def init_session_state(reset=False):
     _list1 = ['routes', 'stops', 'markers', 'shapes', 'routes_data', 'features']
     _list2 = ['disabled', 'map_html']
+    if "center" not in st.session_state:
+        st.session_state.update({"center": [22.302711, 114.177216]})
+    if "zoom" not in st.session_state:
+        st.session_state["zoom"] = 11
     for l in _list1:
         if l not in st.session_state or reset:
             st.session_state[l] = []
@@ -264,7 +263,7 @@ def go_bus_web():
     return headway_data
 
 
-if __name__ == "__main__":
+def main():
     st.set_page_config(
         page_title="WARS transit master",
         page_icon="🌍",
@@ -336,3 +335,6 @@ if __name__ == "__main__":
 
         if len( st.session_state['routes_data'] ) > 0:
             st_df_with_download( st.session_state['routes_data'], 'routes_data' )
+
+if __name__ == "__main__":
+    main()
