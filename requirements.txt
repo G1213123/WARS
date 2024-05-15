@@ -8,7 +8,7 @@ inflect
 pandas
 pyproj
 shapely
-streamlit>=1.13.0, !=1.34.0
-streamlit-folium
-folium>=0.13,!=0.15.0
+streamlit==1.18.1
+streamlit-folium==0.6.15
+folium==0.13.0
 html2text

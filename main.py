@@ -281,8 +281,7 @@ def main():
         if len( st.session_state["shapes"] ) == 0:
             st.info( 'Draw the area with the polygon mode in left side panel of the map' )
         output = st_folium( m, key="init", width=1500, height=600,
-                            center=st.session_state['center'],
-                            zoom=st.session_state['zoom'] )
+                            )
         if st.button( "Get Data" ):
             init_session_state( True )
             if 'center' in output.keys():
