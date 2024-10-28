@@ -143,9 +143,9 @@ class GetHeadway():
         times = ['am1', 'pm1', 'period', 'day_type']
         for t in times:
             setattr( self, t, st.session_state[t] )
-        self.am2 = datetime.datetime.combine( datetime.date.today(), self.am1 ) + datetime.timedelta( hours=period )
+        self.am2 = datetime.datetime.combine( datetime.date.today(), self.am1 ) + datetime.timedelta( hours=self.period )
         self.am2 = self.am2.time()
-        self.pm2 = datetime.datetime.combine( datetime.date.today(), self.pm1 ) + datetime.timedelta( hours=period )
+        self.pm2 = datetime.datetime.combine( datetime.date.today(), self.pm1 ) + datetime.timedelta( hours=self.period )
         self.pm2 = self.pm2.time()
         self.progress = progress
         self.dist = st.session_state['dist'][0].lower() if 'dist' in st.session_state else ''
