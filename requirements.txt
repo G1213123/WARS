@@ -12,3 +12,4 @@ streamlit==1.18.1
 streamlit-folium==0.6.15
 folium==0.13.0
 html2text
+altair<5
