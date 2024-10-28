@@ -65,13 +65,13 @@ class map_html:
                     description = folium.Popup(
                         html='<b>#' + str( b_stop['STOP_ID'] ) + '</b><br><font size="4">'
                              + b_stop['NAME']
-                             + '</font><br><i> lat=%s lon=%s </i>' % (b_stop.bbox[1], b_stop.bbox[0])
+                             + '</font><br><i> lat=%s lon=%s </i>' % (b_stop.geometry.x, b_stop.geometry.y)
                              + '<br><font size="2"><b>%s (%s): </b><br>' % (
                                  type, b_stop[type].count( ',' ) + 1)
                              + '<br>'.join( splitter( b_stop[type], 48 ) ) +
                              '</font>', max_width=1500 )
                     st.session_state['markers'].append(
-                        folium.Marker( location=[b_stop.bbox[1], b_stop.bbox[0]], radius=5,
+                        folium.Marker( location=[b_stop.geometry.x, b_stop.geometry.y], radius=5,
                                        popup=description, icon=folium.Icon( color=color ) ) )
 
     def map_aoi(self):
@@ -210,7 +210,7 @@ def routes_export_polygon_mode(polygon):
     routes, stops = routes_from_stops( stops )
 
     # Formatting
-    stops = pd.concat( [stops['properties'].apply( pd.Series ), stops['BUS'], stops['GMB']], axis=1 )
+    stops = pd.concat( [stops['properties'].apply( pd.Series ), stops['BUS'], stops['GMB'], stops['geometry']], axis=1 )
     stops[' '] = ""  # padding for display
     if 'STOP_ID' in stops.columns:
         stops['STOP_ID'] = stops['STOP_ID'].apply( str )
